@@ -14,6 +14,26 @@ define, silently, all day, without ever stealing focus or getting in your way.
 
 ---
 
+## Download
+
+Prebuilt Windows binaries are attached to each
+[GitHub release](https://github.com/harshit5129/file-juggler/releases). The zip
+contains a single self-contained executable: **no compiler, no SDK, and no .NET
+runtime install required.**
+
+| Asset | Size | Requirements |
+| --- | --- | --- |
+| `FileJuggler-<version>-win-x64.zip` | ~43 MB | Windows 10/11 x64. Nothing else. |
+
+Extract it and run `Juggler.Ui.exe`. It creates its config on first launch at
+`%LOCALAPPDATA%\FileJuggler\rules.json`.
+
+These builds are **self-contained** rather than NativeAOT. NativeAOT would give a
+far smaller and faster binary, which is what the resident daemon will eventually
+use, but it requires the Visual Studio C++ build tools and Windows SDK and fails
+outright without them. The editor is an on-demand process, so its size and idle
+footprint are not the thing being optimised here.
+
 ## Status
 
 | Component | State |
