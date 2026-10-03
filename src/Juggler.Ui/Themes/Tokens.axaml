@@ -1,0 +1,156 @@
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      Design tokens. Locked: every surface, type and space decision resolves through this file.
+
+      Hallmark - genre: modern-minimal - macrostructure: Working List - theme: Cobalt
+      - Enrichment: none (typography only)
+
+      Theme: Cobalt is the dev-tool register - a cool engineered ground, ruler-drawn borders,
+      exactly ONE signal accent, and mono used as a machine-readout voice. "Does this read like
+      an instrument panel, or like a marketing template?" is the test.
+
+      Rules that keep it coherent:
+        * Two surfaces plus one hover tint. Depth comes from 1px rules, not stacked fills.
+        * One accent (electric cobalt), used on actionable things only. Never decoration, and
+          never as a flood. Genre rule: less than 5% of any viewport.
+        * Status colours are reserved for status. Nothing else borrows them.
+        * No drop shadows. Cobalt allows a single barely-there lift and the app uses none;
+          borders do the work.
+        * Roman everywhere. No italic headings.
+
+      Light and dark are both first-class, defined per variant rather than one being a
+      filtered version of the other.
+    -->
+
+    <ResourceDictionary.ThemeDictionaries>
+
+        <!-- ============================ DARK ============================ -->
+        <!-- The graphite counterpart: a dark Cobalt, not Cobalt's light paper inverted. -->
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="BgBrush"             Color="#14161A" />
+            <SolidColorBrush x:Key="SurfaceBrush"        Color="#14161A" />
+            <SolidColorBrush x:Key="SurfaceAltBrush"     Color="#1A1D22" />
+            <SolidColorBrush x:Key="SurfaceHoverBrush"   Color="#1F232A" />
+            <SolidColorBrush x:Key="SurfaceActiveBrush"  Color="#262A31" />
+
+            <SolidColorBrush x:Key="BorderBrush"         Color="#262A31" />
+            <SolidColorBrush x:Key="BorderStrongBrush"   Color="#363B44" />
+            <SolidColorBrush x:Key="DividerBrush"        Color="#202429" />
+
+            <SolidColorBrush x:Key="TextBrush"           Color="#E9EBEE" />
+            <SolidColorBrush x:Key="TextSecondaryBrush"  Color="#A2A9B4" />
+            <SolidColorBrush x:Key="TextTertiaryBrush"   Color="#6F7681" />
+            <SolidColorBrush x:Key="TextDisabledBrush"   Color="#4C525B" />
+
+            <SolidColorBrush x:Key="AccentBrush"         Color="#5B8DEF" />
+            <SolidColorBrush x:Key="AccentHoverBrush"    Color="#7BA3F5" />
+            <SolidColorBrush x:Key="AccentPressedBrush"  Color="#4A7CDD" />
+            <SolidColorBrush x:Key="AccentSoftBrush"     Color="#1A2135" />
+            <SolidColorBrush x:Key="OnAccentBrush"       Color="#0B0C0E" />
+
+            <SolidColorBrush x:Key="SuccessBrush"        Color="#3FA971" />
+            <SolidColorBrush x:Key="SuccessSoftBrush"    Color="#12211A" />
+            <SolidColorBrush x:Key="WarningBrush"        Color="#C08A2E" />
+            <SolidColorBrush x:Key="WarningSoftBrush"    Color="#231C10" />
+            <SolidColorBrush x:Key="DangerBrush"         Color="#D2554E" />
+            <SolidColorBrush x:Key="DangerSoftBrush"     Color="#241514" />
+
+            <SolidColorBrush x:Key="ScrollThumbBrush"    Color="#343941" />
+        </ResourceDictionary>
+
+        <!-- ============================ LIGHT ============================ -->
+        <ResourceDictionary x:Key="Light">
+            <!-- Cool engineered paper, deliberately not pure white: pure #fff reads clinical,
+                 an engineered near-white reads like a document. -->
+            <SolidColorBrush x:Key="BgBrush"             Color="#F7F8FB" />
+            <SolidColorBrush x:Key="SurfaceBrush"        Color="#FFFFFF" />
+            <SolidColorBrush x:Key="SurfaceAltBrush"     Color="#F1F3F8" />
+            <SolidColorBrush x:Key="SurfaceHoverBrush"   Color="#EDEFF5" />
+            <SolidColorBrush x:Key="SurfaceActiveBrush"  Color="#E4E8F0" />
+
+            <!-- Cool near-neutral rules. Visible, not a 0.5px editorial hairline. -->
+            <SolidColorBrush x:Key="BorderBrush"         Color="#E2E6ED" />
+            <SolidColorBrush x:Key="BorderStrongBrush"   Color="#C9D0DB" />
+            <SolidColorBrush x:Key="DividerBrush"        Color="#EAEDF3" />
+
+            <!-- Cool charcoal ink, never pure black. -->
+            <SolidColorBrush x:Key="TextBrush"           Color="#333842" />
+            <SolidColorBrush x:Key="TextSecondaryBrush"  Color="#4A5261" />
+            <SolidColorBrush x:Key="TextTertiaryBrush"   Color="#7A8290" />
+            <SolidColorBrush x:Key="TextDisabledBrush"   Color="#AEB5C0" />
+
+            <SolidColorBrush x:Key="AccentBrush"         Color="#2563EB" />
+            <SolidColorBrush x:Key="AccentHoverBrush"    Color="#1D4FD8" />
+            <SolidColorBrush x:Key="AccentPressedBrush"  Color="#1A45B8" />
+            <SolidColorBrush x:Key="AccentSoftBrush"     Color="#E8EFFD" />
+            <SolidColorBrush x:Key="OnAccentBrush"       Color="#FFFFFF" />
+
+            <SolidColorBrush x:Key="SuccessBrush"        Color="#1F7A4C" />
+            <SolidColorBrush x:Key="SuccessSoftBrush"    Color="#E9F5EE" />
+            <SolidColorBrush x:Key="WarningBrush"        Color="#8A6110" />
+            <SolidColorBrush x:Key="WarningSoftBrush"    Color="#FBF3E4" />
+            <SolidColorBrush x:Key="DangerBrush"         Color="#B3322B" />
+            <SolidColorBrush x:Key="DangerSoftBrush"     Color="#FCEDEC" />
+
+            <SolidColorBrush x:Key="ScrollThumbBrush"    Color="#C6CDD8" />
+        </ResourceDictionary>
+
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!-- ======================== TYPOGRAPHY ========================= -->
+    <!-- Three faces, each with one job. This is the deliberate part of the change:
+         was Inter for everything, which read as a default. Now there is a hierarchy.
+
+           Display   Bahnschrift SemiBold - a DIN-derived technical grotesque. Mechanical,
+                     engineer's-notebook character. Carries the window title, empty-state
+                     headings, and the section labels.
+           Body      Inter - bundled as an Avalonia resource, so it does not depend on the
+                     user's machine having it installed. Neutral, readable at 13px.
+           Mono      Cascadia Mono - reserved for paths, tokens, sizes and counters, where
+                     character identity actually matters and alignment does the work.
+
+         Why not Space Grotesk, which the Cobalt spec names? Google Fonts ships it only as a
+         variable-weight TTF, and Avalonia's variable-axis support is not reliable enough to
+         trust for headings: an unsupported axis silently falls back to faux-bold, which looks
+         worse than a real static face. Bahnschrift is a static per-weight family, ships with
+         Windows, and sits in the same technical register. -->
+    <FontFamily x:Key="UiFont">avares://Avalonia.Fonts.Inter/Assets#Inter</FontFamily>
+    <FontFamily x:Key="DisplayFont">Bahnschrift SemiBold</FontFamily>
+    <FontFamily x:Key="MonoFont">Cascadia Mono,Consolas,Menlo,monospace</FontFamily>
+
+    <!-- A short scale. Four steps is enough; a long one produces arbitrary sizes nobody
+         can predict. Display is used once per screen at most. -->
+    <x:Double x:Key="FontSizeDisplay">26</x:Double>
+    <x:Double x:Key="FontSizeTitle">16</x:Double>
+    <x:Double x:Key="FontSizeBody">13</x:Double>
+    <x:Double x:Key="FontSizeSmall">12</x:Double>
+    <x:Double x:Key="FontSizeMicro">11</x:Double>
+
+    <!-- Cobalt sets display type tight. Negative tracking on large sizes only; body text
+         stays at default, where tracking adjustments hurt legibility. -->
+    <x:Double x:Key="TrackingDisplay">-0.5</x:Double>
+    <x:Double x:Key="TrackingLabel">0.8</x:Double>
+
+    <!-- ========================== GEOMETRY ========================== -->
+    <!-- Cobalt's "tight technical radii, drawn with a ruler": 6px on controls, a little more
+         on panels. Not soft pills, not zero. -->
+    <CornerRadius x:Key="RadiusSm">4</CornerRadius>
+    <CornerRadius x:Key="RadiusMd">6</CornerRadius>
+    <CornerRadius x:Key="RadiusLg">8</CornerRadius>
+    <CornerRadius x:Key="RadiusPill">999</CornerRadius>
+
+    <!-- 4pt scale. Tight: a dense operator tool, not a marketing page. -->
+    <Thickness x:Key="PadSm">8</Thickness>
+    <Thickness x:Key="PadMd">12</Thickness>
+    <Thickness x:Key="PadLg">18</Thickness>
+
+    <x:Double x:Key="ControlHeightSm">26</x:Double>
+    <x:Double x:Key="ControlHeight">32</x:Double>
+    <x:Double x:Key="ControlHeightLg">38</x:Double>
+
+    <!-- 1px rules do the structural work in this theme. -->
+    <Thickness x:Key="Hairline">1</Thickness>
+
+</ResourceDictionary>

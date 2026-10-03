@@ -1,0 +1,230 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:core="using:Juggler.Core.Rules"
+        x:Class="Juggler.Ui.Views.RuleEditorWindow"
+        Title="Edit rule"
+        Width="840" Height="760"
+        MinWidth="660" MinHeight="580"
+        Background="{DynamicResource BgBrush}"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- HEADER -->
+        <Border Grid.Row="0"
+                Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="22,0">
+            <Grid ColumnDefinitions="Auto,*,Auto" Height="58">
+
+                <Button Grid.Column="0" Classes="ghost" Content="&#8592;  Rules"
+                        Click="OnCancel" VerticalAlignment="Center" />
+
+                <TextBlock Grid.Column="1" x:Name="HeaderTitle" Classes="title"
+                           VerticalAlignment="Center" Margin="14,0,0,0"
+                           Text="New rule" />
+
+                <Button Grid.Column="2" x:Name="SaveButton" Classes="accent"
+                        Content="Save" Width="110" Click="OnSave" />
+            </Grid>
+        </Border>
+
+        <!-- FORM -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Margin="22,20,22,22" Spacing="18">
+
+                <!-- DESCRIPTION -->
+                <StackPanel Spacing="7">
+                    <TextBlock Classes="sectionLabel" Text="Description" />
+                    <TextBox x:Name="NameBox" PlaceholderText="What does this rule do?"
+                             TextChanged="OnNameChanged" />
+                    <TextBlock Classes="caption"
+                               Text="Shown in the rules list. Make it something you will still recognise in six months." />
+                </StackPanel>
+
+                <!-- MONITOR -->
+                <StackPanel Spacing="7">
+                    <TextBlock Classes="sectionLabel" Text="Monitor" />
+
+                    <Border Classes="inset" Padding="12">
+                        <StackPanel Spacing="4">
+
+                            <ItemsControl x:Name="MonitorPaths">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate DataType="core:MonitorEntry">
+                                        <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,0,0,8">
+                                            <Border Grid.Column="0" Width="26" Height="26" CornerRadius="7"
+                                                    Background="{DynamicResource SurfaceBrush}"
+                                                    VerticalAlignment="Center">
+                                                <Path Data="M 1,4 L 1,10 C 1,13 4,14 8,14 C 12,14 15,13 15,10 L 15,4 Z M 1,4 L 1,1 L 6,1 L 7.5,3.5 L 15,3.5 L 15,4"
+                                                      Stroke="{DynamicResource TextSecondaryBrush}"
+                                                      StrokeThickness="1.2"
+                                                      StrokeJoin="Round"
+                                                      Stretch="Uniform" Margin="6" />
+                                            </Border>
+                                            <TextBlock Grid.Column="1" Margin="10,0,8,0"
+                                                       VerticalAlignment="Center" Classes="mono"
+                                                       Text="{Binding Path}"
+                                                       ToolTip.Tip="{Binding Path}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                            <Button Grid.Column="2" Classes="icon"
+                                                    Content="&#10005;"
+                                                    Tag="{Binding Path}"
+                                                    Click="OnRemovePath"
+                                                    ToolTip.Tip="Remove this folder" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <TextBlock x:Name="NoPathsHint" Classes="caption"
+                                       Text="No folders yet - add one below."
+                                       Margin="0,4,0,8" />
+
+                            <CheckBox x:Name="SubfoldersCheck" Content="Include subfolders"
+                                      IsChecked="True" Margin="0,0,0,8"
+                                      IsCheckedChanged="OnSubfoldersChanged" />
+
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,2,0,0">
+                                <Button Classes="ghost" Content="+  Add folder" Click="OnAddPath" />
+                                <TextBlock Classes="caption" VerticalAlignment="Center"
+                                           Text="Files appearing in these folders trigger this rule." />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- IF -->
+                <StackPanel Spacing="7">
+                    <TextBlock Classes="sectionLabel" Text="If - every condition must match" />
+
+                    <Border Classes="inset" Padding="14,12">
+                        <StackPanel Spacing="12">
+
+                            <Grid ColumnDefinitions="150,*">
+                                <TextBlock Grid.Column="0" Classes="secondary"
+                                           VerticalAlignment="Center" Text="File name" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                    <TextBox x:Name="NamePatternBox" Classes="mono"
+                                             Width="280" HorizontalAlignment="Left"
+                                             PlaceholderText="report-*.pdf   or   ^IMG_\d+"
+                                             TextChanged="OnPatternChanged" />
+                                    <ComboBox x:Name="PatternKindBox" Width="160"
+                                              SelectionChanged="OnPatternKindChanged" />
+                                </StackPanel>
+                            </Grid>
+
+                            <Grid ColumnDefinitions="150,*">
+                                <TextBlock Grid.Column="0" Classes="secondary"
+                                           VerticalAlignment="Center" Text="File types" />
+                                <TextBox Grid.Column="1" x:Name="ExtensionsBox" Classes="mono"
+                                         PlaceholderText="png jpg jpeg   (blank matches everything)"
+                                         TextChanged="OnExtensionsChanged" />
+                            </Grid>
+
+                            <Grid ColumnDefinitions="150,*">
+                                <TextBlock Grid.Column="0" Classes="secondary"
+                                           VerticalAlignment="Center" Text="Size range" />
+                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                    <TextBox x:Name="MinSizeBox" Classes="mono" Width="150"
+                                             HorizontalAlignment="Left"
+                                             PlaceholderText="min bytes"
+                                             TextChanged="OnSizeChanged" />
+                                    <TextBlock Classes="secondary" VerticalAlignment="Center" Text="&#8211;" />
+                                    <TextBox x:Name="MaxSizeBox" Classes="mono" Width="150"
+                                             HorizontalAlignment="Left"
+                                             PlaceholderText="max bytes"
+                                             TextChanged="OnSizeChanged" />
+                                </StackPanel>
+                            </Grid>
+
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- THEN -->
+                <StackPanel Spacing="7">
+                    <TextBlock Classes="sectionLabel" Text="Then - what to do" />
+
+                    <Border Classes="inset" Padding="14,12">
+                        <StackPanel Spacing="12">
+
+                            <Grid ColumnDefinitions="150,*">
+                                <TextBlock Grid.Column="0" Classes="secondary"
+                                           VerticalAlignment="Center" Text="Action" />
+                                <ComboBox Grid.Column="1" x:Name="ActionBox"
+                                          HorizontalAlignment="Stretch"
+                                          SelectionChanged="OnActionChanged" />
+                            </Grid>
+
+                            <Grid ColumnDefinitions="150,*,Auto" x:Name="DestinationRow">
+                                <TextBlock Grid.Column="0" Classes="secondary"
+                                           VerticalAlignment="Center" Text="Destination" />
+                                <TextBox Grid.Column="1" x:Name="DestinationBox" Classes="mono"
+                                         PlaceholderText="C:\Users\me\Pictures\Sorted\{extension}"
+                                         TextChanged="OnDestinationChanged" />
+                                <Button Grid.Column="2" Classes="ghost" Content="Browse"
+                                        Margin="8,0,0,0" Click="OnBrowseDestination" />
+                            </Grid>
+
+                            <Grid ColumnDefinitions="150,*" x:Name="SortKeyRow" IsVisible="False">
+                                <TextBlock Grid.Column="0" Classes="secondary"
+                                           VerticalAlignment="Center" Text="Split by" />
+                                <ComboBox Grid.Column="1" x:Name="SortKeyBox"
+                                          HorizontalAlignment="Stretch"
+                                          SelectionChanged="OnSortKeyChanged" />
+                            </Grid>
+
+                            <Grid ColumnDefinitions="150,*" x:Name="RenameRow">
+                                <TextBlock Grid.Column="0" Classes="secondary"
+                                           VerticalAlignment="Center" Text="Rename to" />
+                                <!-- Placeholder set in code: "{...}" would otherwise be parsed as a markup extension. -->
+                                <TextBox Grid.Column="1" x:Name="RenameBox" Classes="mono"
+                                         TextChanged="OnRenameChanged" />
+                            </Grid>
+
+                            <Grid ColumnDefinitions="150,*" x:Name="CommandRow" IsVisible="False">
+                                <TextBlock Grid.Column="0" Classes="secondary"
+                                           VerticalAlignment="Center" Text="Command" />
+                                <TextBox Grid.Column="1" x:Name="CommandBox" Classes="mono"
+                                         PlaceholderText="allowlist key"
+                                         TextChanged="OnCommandChanged" />
+                            </Grid>
+
+                        </StackPanel>
+                    </Border>
+
+                    <Border Classes="inset" Padding="12,10">
+                        <StackPanel Spacing="4">
+                            <TextBlock Classes="sectionLabel" Text="Tokens" />
+                            <!-- Token text set in code: "{...}" would otherwise be parsed as a markup extension. -->
+                            <TextBlock x:Name="TokensText" Classes="caption wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!-- ERRORS -->
+                <Border x:Name="ErrorPanel" IsVisible="False"
+                        Background="{DynamicResource DangerSoftBrush}"
+                        CornerRadius="{DynamicResource RadiusLg}"
+                        Padding="14,12">
+                    <StackPanel Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse Width="7" Height="7" VerticalAlignment="Center"
+                                     Fill="{DynamicResource DangerBrush}" />
+                            <TextBlock Classes="sectionLabel" Text="This rule will not run"
+                                       Foreground="{DynamicResource DangerBrush}" />
+                        </StackPanel>
+                        <TextBlock x:Name="ErrorText" Classes="error wrap" />
+                    </StackPanel>
+                </Border>
+
+                <TextBlock Classes="caption wrap"
+                           Text="Saving writes to the config file atomically. A running daemon picks the change up without restarting." />
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
+</Window>

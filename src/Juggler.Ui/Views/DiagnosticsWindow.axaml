@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Juggler.Ui.Views.DiagnosticsWindow"
+        Title="Diagnostics"
+        Width="760" Height="560"
+        MinWidth="520" MinHeight="380"
+        Background="{DynamicResource BgBrush}"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="Auto,*,Auto" Margin="20">
+
+        <StackPanel Grid.Row="0" Spacing="4" Margin="0,0,0,14">
+            <TextBlock Classes="title" Text="Diagnostics" />
+            <TextBlock Classes="secondary wrap"
+                       Text="Safe to paste into a bug report. It reports configuration state and rule counts, not the rule bodies &#8212; those contain your real filesystem paths." />
+        </StackPanel>
+
+        <Border Grid.Row="1" Classes="inset" Padding="0">
+            <ScrollViewer>
+                <TextBox x:Name="ReportBox" IsReadOnly="True" AcceptsReturn="True"
+                         TextWrapping="NoWrap" Classes="mono readonly" Padding="14" />
+            </ScrollViewer>
+        </Border>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8"
+                    HorizontalAlignment="Right" Margin="0,14,0,0">
+            <TextBlock x:Name="CopiedText" Classes="caption"
+                       Foreground="{DynamicResource SuccessBrush}"
+                       VerticalAlignment="Center" IsVisible="False" Text="Copied" />
+            <Button Classes="ghost" Content="Copy" Click="OnCopy" />
+            <Button Classes="accent" Content="Close" Click="OnClose" Width="100" />
+        </StackPanel>
+
+    </Grid>
+</Window>

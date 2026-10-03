@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Juggler.Core/Juggler.Core.csproj" />
+    <Project Path="src/Juggler.Ui/Juggler.Ui.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Juggler.Core.Tests/Juggler.Core.Tests.csproj" />
+  </Folder>
+</Solution>

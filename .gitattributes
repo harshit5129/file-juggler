@@ -1,0 +1,23 @@
+# Normalise line endings in the repository; check out per platform.
+#
+# Without this, every contributor's git rewrites every other contributor's files
+# on checkout, which produces whole-file diffs that have nothing to do with the
+# change. It is also a contributing factor in the encoding corruption this repo
+# hit repeatedly: a file rewritten from CRLF to LF and back has been through more
+# encode/decode round trips than it needed to be.
+* text=auto eol=lf
+
+# Windows-native project files keep CRLF, because that is what the tooling expects.
+*.sln  text eol=crlf
+*.slnx text eol=crlf
+*.csproj   text eol=crlf
+*.props    text eol=crlf
+*.manifest text eol=crlf
+
+# Binary assets: never touched by line-ending conversion.
+*.png  binary
+*.ico  binary
+*.jpg  binary
+*.gif  binary
+*.woff binary
+*.woff2 binary

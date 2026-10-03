@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+
+  "general": {
+    "mode": "Resident",
+    "notify": false,
+    "notifyOnError": true,
+    "notifyOnWatchedFolderMissing": true,
+    "notifyOnLowMemoryMode": true,
+
+    "debounceSeconds": 5,
+    "sweepIntervalMinutes": 15,
+    "maxConcurrent": 1,
+
+    "priority": "BelowNormal",
+
+    "suspendOnLock": true,
+    "suspendOnScreenSaver": true,
+    "throttleOnBattery": true,
+    "throttleWhenMonitorOff": true,
+
+    "registerAutostart": true,
+
+    "logMaxMegabytes": 5,
+    "logRotations": 3,
+
+    "dryRun": true
+  },
+
+  "rules": [
+    {
+      "id": "screens01",
+      "name": "Sort screenshots",
+      "enabled": true,
+
+      "monitor": {
+        "paths": [
+          { "path": "C:\\Users\\you\\Pictures\\Screenshots" }
+        ],
+        "includeSubfolders": true
+      },
+
+      "if": {
+        "extensions": [ "png", "jpg", "jpeg" ],
+        "namePattern": "^Screenshot",
+        "namePatternKind": "Glob",
+        "minSizeBytes": 10240,
+        "maxSizeBytes": null,
+        "createdAfter": null,
+        "createdBefore": null,
+        "modifiedAfter": null,
+        "modifiedBefore": null
+      },
+
+      "then": {
+        "action": "SortIntoFolders",
+        "into": "C:\\Users\\you\\Pictures\\Sorted\\{extension}",
+        "renamePattern": null,
+        "sortBy": "Extension",
+        "commandKey": null
+      }
+    },
+
+    {
+      "id": "inbox001",
+      "name": "Archive installers from the download inbox",
+      "enabled": false,
+
+      "monitor": {
+        "paths": [
+          { "path": "C:\\Users\\you\\Downloads\\Inbox" }
+        ],
+        "includeSubfolders": false
+      },
+
+      "if": {
+        "extensions": [ "msi", "exe", "msix", "zip" ],
+        "namePattern": null,
+        "namePatternKind": "Glob",
+        "minSizeBytes": 1048576,
+        "maxSizeBytes": null,
+        "createdAfter": null,
+        "createdBefore": null,
+        "modifiedAfter": null,
+        "modifiedBefore": null
+      },
+
+      "then": {
+        "action": "Move",
+        "into": "C:\\Users\\you\\Downloads\\Installers",
+        "renamePattern": "{date:yyyy-MM}-{name}{ext}",
+        "sortBy": "Extension",
+        "commandKey": null
+      }
+    },
+
+    {
+      "id": "pdfs001",
+      "name": "Group PDFs by year",
+      "enabled": true,
+
+      "monitor": {
+        "paths": [
+          { "path": "C:\\Users\\you\\Documents\\Papers" }
+        ],
+        "includeSubfolders": true
+      },
+
+      "if": {
+        "extensions": [ "pdf" ],
+        "namePattern": null,
+        "namePatternKind": "Glob",
+        "minSizeBytes": null,
+        "maxSizeBytes": null,
+        "createdAfter": null,
+        "createdBefore": null,
+        "modifiedAfter": null,
+        "modifiedBefore": null
+      },
+
+      "then": {
+        "action": "SortIntoFolders",
+        "into": "C:\\Users\\you\\Documents\\Papers\\{date:yyyy}",
+        "renamePattern": null,
+        "sortBy": "DateModified",
+        "commandKey": null
+      }
+    }
+  ],
+
+  "stats": {
+    "filesProcessed": 0,
+    "bytesProcessed": 0,
+    "filesMatched": 0,
+    "rulesFailed": 0,
+    "lastRunAt": null
+  }
+}

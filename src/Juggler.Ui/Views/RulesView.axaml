@@ -1,0 +1,126 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:Juggler.Ui.ViewModels"
+             x:Class="Juggler.Ui.Views.RulesView"
+             Background="Transparent">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- TOOLBAR -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="24,18,24,14">
+
+            <TextBox x:Name="SearchBox" Grid.Column="0"
+                     Width="300" HorizontalAlignment="Left"
+                     PlaceholderText="Filter rules&#8230;"
+                     KeyUp="OnSearchKeyUp" />
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                <Button Classes="ghost" Content="Import" ToolTip.Tip="Import rules from a file" />
+                <Button Classes="ghost" Content="Export" ToolTip.Tip="Export all rules to a file" />
+                <Button Classes="accent" Content="+  New rule" Click="OnNewRule" />
+            </StackPanel>
+        </Grid>
+
+        <!-- LIST -->
+        <Panel Grid.Row="1">
+
+            <ScrollViewer>
+                <ItemsControl x:Name="RuleList" Margin="24,0,24,0">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="vm:RuleRow">
+
+                            <!-- A row, not a card: no fill, no border box, just a hairline beneath
+                                     it. Depth comes from rules, not from stacked surfaces. The
+                                     decorative action glyph that used to sit here was removed: it
+                                     repeated the same icon on every row and carried no information. -->
+                            <Border Classes="row" Padding="4,14">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+
+                                    <!-- Enabled toggle -->
+                                    <ToggleSwitch Grid.Column="0"
+                                                  IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                                  Tag="{Binding}"
+                                                  IsCheckedChanged="OnToggleEnabled"
+                                                  ToolTip.Tip="Pause or resume this rule"
+                                                  VerticalAlignment="Center"
+                                                  Margin="0,0,18,0" />
+
+                                    <!-- Text. The name carries the row; everything under it is
+                                         metadata, so it steps down in weight and size. -->
+                                    <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}" Classes="rowTitle" />
+                                        <TextBlock Text="{Binding Summary}" Classes="secondary" />
+                                        <TextBlock Text="{Binding PathSummary}" Classes="mono caption" />
+                                        <TextBlock Text="{Binding ErrorText}" Classes="error"
+                                                   IsVisible="{Binding HasError}" />
+                                    </StackPanel>
+
+                                    <!-- Row actions: trailing Auto column, right-aligned. -->
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal"
+                                                Spacing="4" VerticalAlignment="Center">
+                                        <Button Classes="ghost" Content="Edit"
+                                                Tag="{Binding}"
+                                                Click="OnEdit" />
+                                        <Button Classes="icon" Content="&#8942;"
+                                                Tag="{Binding}"
+                                                Click="OnMore"
+                                                ToolTip.Tip="More actions" />
+                                    </StackPanel>
+
+                                </Grid>
+                            </Border>
+
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- EMPTY STATE -->
+            <StackPanel x:Name="EmptyState"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Spacing="14" MaxWidth="380" IsVisible="False">
+
+                <Border Width="60" Height="60" CornerRadius="17"
+                        Background="{DynamicResource SurfaceAltBrush}"
+                        HorizontalAlignment="Center">
+                    <Path Data="M 2,4 L 2,9 C 2,13 5,14.5 8,14.5 C 11,14.5 14,13 14,9 L 14,4 M 2,4 L 2,1.5 M 14,4 L 14,1.5 M 5,14.5 L 11,14.5"
+                          Stroke="{DynamicResource TextTertiaryBrush}"
+                          StrokeThickness="1.5"
+                          StrokeLineCap="Round"
+                          Stretch="Uniform" Margin="14" />
+                </Border>
+
+                <TextBlock Text="No rules yet" Classes="title"
+                           HorizontalAlignment="Center" />
+
+                <TextBlock Classes="secondary wrap" TextAlignment="Center"
+                           Text="Add a rule to watch a folder and sort what lands in it. Nothing leaves your machine." />
+
+                <Button Classes="accent" Content="+  Create your first rule"
+                        HorizontalAlignment="Center" Margin="0,6,0,0"
+                        Click="OnNewRule" />
+            </StackPanel>
+
+            <!-- NO MATCH STATE -->
+            <StackPanel x:Name="NoMatchState"
+                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                        Spacing="10" IsVisible="False">
+                <TextBlock Text="No rules match that filter" Classes="title"
+                           HorizontalAlignment="Center" />
+                <Button Classes="ghost" Content="Clear filter" HorizontalAlignment="Center"
+                        Click="OnClearFilter" />
+            </StackPanel>
+
+        </Panel>
+
+        <!-- FOOTER -->
+        <!-- A boxed help panel competed with the list for attention. The same advice fits in one
+             quiet line, and it is only shown when there is something to be confused about. -->
+        <Border Grid.Row="2" Margin="24,0,24,12">
+            <TextBlock Classes="caption" TextWrapping="Wrap" MaxWidth="720"
+                       HorizontalAlignment="Left"
+                       Text="Rules are evaluated top to bottom and the first match wins, so put specific rules above general ones. A file is left alone for a few seconds after it stops changing, so half-copied files are never grabbed." />
+        </Border>
+
+    </Grid>
+</UserControl>

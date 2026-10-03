@@ -1,0 +1,195 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Juggler.Ui.Views.SettingsView"
+             Background="Transparent">
+
+    <ScrollViewer>
+        <StackPanel Margin="24,20,24,24" Spacing="18" MaxWidth="760" HorizontalAlignment="Left">
+
+            <!-- ======================== RUN MODE ========================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="3">
+                        <TextBlock Classes="title" Text="Running" />
+                        <TextBlock Classes="secondary wrap"
+                                   Text="Resident mode reacts in milliseconds but holds a small amount of memory. Scheduled mode holds nothing at all and reacts at the next run." />
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <RadioButton x:Name="ResidentRadio" GroupName="mode"
+                                     Content="Resident (tray)" IsChecked="True" />
+                        <RadioButton x:Name="ScheduledRadio" GroupName="mode"
+                                     Content="Scheduled (run and exit)" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ========================= SAFETY ========================== -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="3">
+                        <TextBlock Classes="title" Text="Safety" />
+                        <TextBlock Classes="secondary wrap"
+                                   Text="These two settings are the difference between a mistake you can undo and one you cannot." />
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,4">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Dry run" FontWeight="SemiBold" />
+                            <TextBlock Classes="caption wrap"
+                                       Text="Report what every rule would do and change nothing on disk. Recommended until you trust your rules." />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1" x:Name="DryRunSwitch"
+                                      IsCheckedChanged="OnIsCheckedChanged" />
+                    </Grid>
+
+                    <Rectangle Height="1" Fill="{DynamicResource DividerBrush}" />
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Settle delay" FontWeight="SemiBold" />
+                            <TextBlock Classes="caption wrap"
+                                       Text="How long a file must stop changing before it is touched. Prevents half-copied files from being grabbed." />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <TextBox x:Name="DebounceBox" Width="80" TextAlignment="Right"
+                                     TextChanged="OnTextChanged" />
+                            <TextBlock Classes="secondary" VerticalAlignment="Center" Text="s" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Safety-net sweep" FontWeight="SemiBold" />
+                            <TextBlock Classes="caption wrap"
+                                       Text="How often every watched folder is re-checked. This is what catches change notifications Windows drops, which happens on network shares." />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <TextBox x:Name="SweepBox" Width="80" TextAlignment="Right"
+                                     TextChanged="OnTextChanged" />
+                            <TextBlock Classes="secondary" VerticalAlignment="Center" Text="min" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ======================= BACKGROUND ======================== -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="3">
+                        <TextBlock Classes="title" Text="Background behaviour" />
+                        <TextBlock Classes="secondary wrap"
+                                   Text="What the app does while you are not looking. All of these default to the least intrusive setting." />
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,4">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Start with Windows" FontWeight="SemiBold" />
+                            <TextBlock Classes="caption wrap" Text="Registers a per-user Run entry. Needs no administrator rights." />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1" x:Name="AutostartSwitch" IsCheckedChanged="OnIsCheckedChanged" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Suspend when locked" FontWeight="SemiBold" />
+                            <TextBlock Classes="caption wrap" Text="Stops touching files while the session is locked." />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1" x:Name="LockSwitch" IsCheckedChanged="OnIsCheckedChanged" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Throttle on battery" FontWeight="SemiBold" />
+                            <TextBlock Classes="caption wrap" Text="Slows to one file every few seconds instead of stopping, so a laptop on battery still tidies up." />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1" x:Name="BatterySwitch" IsCheckedChanged="OnIsCheckedChanged" />
+                    </Grid>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Low priority" FontWeight="SemiBold" />
+                            <TextBlock Classes="caption wrap" Text="Always yields CPU to whatever you are actually doing." />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1" x:Name="PrioritySwitch" IsCheckedChanged="OnIsCheckedChanged" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ======================= NOTIFICATIONS ====================== -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="3">
+                        <TextBlock Classes="title" Text="Notifications" />
+                        <TextBlock Classes="secondary wrap"
+                                   Text="Off by default, and deliberately so. A tool that sorts files all day has nothing interesting to say." />
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="*,Auto" Margin="0,4">
+                        <StackPanel Grid.Column="0" Spacing="2" VerticalAlignment="Center">
+                            <TextBlock Text="Allow notifications" FontWeight="SemiBold" />
+                            <TextBlock Classes="caption wrap" Text="Master switch. Individual events below still need to be picked." />
+                        </StackPanel>
+                        <ToggleSwitch Grid.Column="1" x:Name="NotifySwitch" />
+                    </Grid>
+
+                    <StackPanel x:Name="NotifyDetails" IsVisible="False" Spacing="10" Margin="0,4,0,0">
+                        <CheckBox x:Name="NotifyErrorCheck" Content="A rule failed" IsCheckedChanged="OnIsCheckedChanged" />
+                        <CheckBox x:Name="NotifyMissingCheck" Content="A watched folder disappeared" IsCheckedChanged="OnIsCheckedChanged" />
+                        <CheckBox x:Name="NotifyLowMemCheck" Content="Entered low-memory safety mode" IsCheckedChanged="OnIsCheckedChanged" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!-- ========================== LOGGING ========================= -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="3">
+                        <TextBlock Classes="title" Text="Logging" />
+                        <TextBlock Classes="secondary wrap"
+                                   Text="Hard-capped. Uncapped logging is the most common cause of slow memory growth in a long-running process." />
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="150,*">
+                        <TextBlock Grid.Column="0" Classes="secondary" VerticalAlignment="Center" Text="Max size" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                            <TextBox x:Name="LogSizeBox" Width="90" TextAlignment="Right"
+                                     TextChanged="OnTextChanged" />
+                            <TextBlock Classes="secondary" VerticalAlignment="Center" Text="MB per file" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid ColumnDefinitions="150,*">
+                        <TextBlock Grid.Column="0" Classes="secondary" VerticalAlignment="Center" Text="Keep" />
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                            <TextBox x:Name="LogRotationsBox" Width="90" TextAlignment="Right"
+                                     TextChanged="OnTextChanged" />
+                            <TextBlock Classes="secondary" VerticalAlignment="Center" Text="rotated files" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- ======================= FILE OPERATIONS ==================== -->
+            <Border Classes="card">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="3">
+                        <TextBlock Classes="title" Text="File operations" />
+                        <TextBlock Classes="secondary wrap"
+                                   Text="Parallel I/O on a mechanical disk makes throughput worse, not better. Leave this at 1 unless you know your storage can take it." />
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="150,*">
+                        <TextBlock Grid.Column="0" Classes="secondary" VerticalAlignment="Center" Text="Concurrency" />
+                        <ComboBox Grid.Column="1" x:Name="ConcurrencyBox" Width="140" HorizontalAlignment="Left"
+                                  SelectionChanged="OnConcurrencyChanged" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Classes="caption wrap"
+                       Text="Changes are written immediately and picked up by a running daemon without a restart." />
+
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

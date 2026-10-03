@@ -1,0 +1,77 @@
+# ---------------------------------------------------------------------------
+# Local-only scratch
+# ---------------------------------------------------------------------------
+# docs/ is published. It holds design rationale and the performance budget and
+# is linked from CONTRIBUTING.md, so it must stay in the repository.
+tools/__pycache__/
+
+# ---------------------------------------------------------------------------
+# .NET build output
+# ---------------------------------------------------------------------------
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+artifacts/
+publish/
+TestResults/
+*.binlog
+
+# Native AOT intermediate output (ILC-generated sources, object files)
+*.nativecodewriter.dll
+*.obj
+generated/
+
+# ---------------------------------------------------------------------------
+# Visual Studio / Rider / VS Code
+# ---------------------------------------------------------------------------
+.vs/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.DotSettings.user
+
+# ---------------------------------------------------------------------------
+# Test + coverage output
+# ---------------------------------------------------------------------------
+[Tt]est[Rr]esult*/
+coverage*.json
+coverage*.xml
+coverage*.info
+*.coverage
+*.trx
+
+# ---------------------------------------------------------------------------
+# Runtime state produced by the app (never commit these)
+# ---------------------------------------------------------------------------
+# Live config can contain real user paths; only the example is tracked.
+config/local.json
+config/local.json.bak
+# Undo journal and rotating logs
+*.journal
+*.journal.tmp
+logs/
+# Bench/soak scratch data used by the performance harness
+bench-out/
+soak-out/
+stress-fixtures/
+
+# ---------------------------------------------------------------------------
+# Secrets and credentials
+# ---------------------------------------------------------------------------
+*.env
+.env
+.env.*
+secrets.json
+*.pfx
+*.p12
+*.snk
+
+# ---------------------------------------------------------------------------
+# OS noise
+# ---------------------------------------------------------------------------
+Thumbs.db
+Desktop.ini
+.DS_Store
