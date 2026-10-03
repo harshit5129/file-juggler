@@ -6,6 +6,10 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Embeds the emblem as a Win32 icon resource. Avalonia's Window.Icon only sets the
+         runtime window icon; without this the .exe has no file icon, so Explorer, the taskbar
+         and any installer-created shortcut would show the default blank application icon. -->
+    <ApplicationIcon>Assets\Icon.ico</ApplicationIcon>
     <BuiltInComInteropSupport>false</BuiltInComInteropSupport>
   </PropertyGroup>
 

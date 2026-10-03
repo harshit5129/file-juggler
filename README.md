@@ -17,22 +17,55 @@ define, silently, all day, without ever stealing focus or getting in your way.
 ## Download
 
 Prebuilt Windows binaries are attached to each
-[GitHub release](https://github.com/harshit5129/file-juggler/releases). The zip
-contains a single self-contained executable: **no compiler, no SDK, and no .NET
-runtime install required.**
+[GitHub release](https://github.com/harshit5129/file-juggler/releases).
 
-| Asset | Size | Requirements |
+| Asset | Size | Use |
 | --- | --- | --- |
-| `FileJuggler-<version>-win-x64.zip` | ~43 MB | Windows 10/11 x64. Nothing else. |
+| `FileJuggler-<version>-win-x64-setup.exe` | ~44 MB | **Recommended.** Installs with Start Menu shortcut, Add/Remove Programs entry and an uninstaller. |
+| `FileJuggler-<version>-win-x64.zip` | ~43 MB | Portable. Extract and run the exe. |
 
-Extract it and run `Juggler.Ui.exe`. It creates its config on first launch at
-`%LOCALAPPDATA%\FileJuggler\rules.json`.
+Both contain a single self-contained executable: **no compiler, no SDK, and no
+.NET runtime install required.**
 
-These builds are **self-contained** rather than NativeAOT. NativeAOT would give a
-far smaller and faster binary, which is what the resident daemon will eventually
-use, but it requires the Visual Studio C++ build tools and Windows SDK and fails
-outright without them. The editor is an on-demand process, so its size and idle
-footprint are not the thing being optimised here.
+### Installing
+
+Run `FileJuggler-<version>-win-x64-setup.exe`. It is a **per-user install**:
+it writes to `%LOCALAPPDATA%\Programs\FileJuggler` and never raises a UAC
+prompt, because the tool needs no elevation. Config lives at
+`%LOCALAPPDATA%\FileJuggler\rules.json` and is created on first launch.
+
+The installer offers three optional tasks:
+
+| Task | Default | Notes |
+| --- | --- | --- |
+| Start Menu shortcut | on | Carries the emblem |
+| Desktop shortcut | off | Carries the emblem |
+| Start automatically when I sign in | **off** | See below |
+
+**Autostart is off by default, deliberately.** Autostarting the *editor* would
+open a window at every sign-in, which is exactly the behaviour this tool exists
+to avoid. The process that should autostart is the resident daemon, which is not
+built yet. The mechanism is in place and tested; the default will flip to on when
+the daemon lands and the entry is repointed at `juggler.exe`.
+
+Uninstalling never deletes your config. It holds your rules and real filesystem
+paths, so it is left in place and the uninstaller tells you where it is.
+
+### A note on binary size
+
+These builds are **self-contained** rather than NativeAOT. NativeAOT would give
+a far smaller and faster binary, which is what the resident daemon will
+eventually use, but it requires the Visual Studio C++ build tools and Windows
+SDK and fails the build outright without them. The editor is an on-demand
+process, so its size and idle footprint are not the thing being optimised here.
+
+To build either artifact yourself:
+
+```powershell
+tools\pack.ps1 -Version 0.1.0
+```
+
+Requires [Inno Setup 6](https://jrsoftware.org/isdl.php) for the installer.
 
 ## Status
 
