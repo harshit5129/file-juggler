@@ -19,6 +19,9 @@ define, silently, all day, without ever stealing focus or getting in your way.
 Prebuilt Windows binaries are attached to each
 [GitHub release](https://github.com/harshit5129/file-juggler/releases).
 
+> **Use 0.1.1 or newer.** The 0.1.0 editor crashes when you add a rule. The
+> fix and the other corrections are in [CHANGELOG.md](CHANGELOG.md).
+
 | Asset | Size | Use |
 | --- | --- | --- |
 | `FileJuggler-<version>-win-x64-setup.exe` | ~44 MB | **Recommended.** Installs with Start Menu shortcut, Add/Remove Programs entry and an uninstaller. |
