@@ -1,13 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <!-- UpdateCheck lives in the UI project, and the version comparison it does is the kind of
-       off-by-a-digit bug that is cheap to test and expensive to ship. Referencing the UI project
-       from the test project pulls in Avalonia, which is fine: these tests never construct a
-       window, so no headless display is needed. -->
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\Juggler.Ui\Juggler.Ui.csproj" />
-  </ItemGroup>
-
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -25,9 +17,16 @@
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\Juggler.Core\Juggler.Core.csproj" />
-  </ItemGroup>
 
+    <!-- UpdateCheck lives in the UI project, and the version comparison it does is the kind of
+         off-by-a-digit bug that is cheap to test and expensive to ship: a string compare puts
+         0.10.0 behind 0.9.0 and would strand every user on an old build. Referencing the UI
+         project pulls in Avalonia, which costs nothing here because none of these tests construct
+         a window. -->
+    <ProjectReference Include="..\..\src\Juggler.Ui\Juggler.Ui.csproj" />
+  </ItemGroup>
 
 </Project>
