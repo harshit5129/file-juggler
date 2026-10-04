@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using Juggler.Core.Rules;
 using Juggler.Ui.Services;
 
@@ -9,20 +12,70 @@ namespace Juggler.Ui.ViewModels;
 /// Kept separate from the model so that formatting decisions ("2 folders watched") live in one
 /// place and the rule itself stays free of presentation concerns.
 /// </para>
+/// <para>
+/// Rows are long-lived and mutate in place. The list binds its <c>ItemsSource</c> once and
+/// never replaces it. Two reasons:
+/// <list type="bullet">
+/// <item>Replacing <c>ItemsSource</c> wholesale tore down every item container mid-frame, and
+/// Avalonia's <c>ContentPresenter</c> null-referenced while clearing them. Reproduced as a hard
+/// crash the moment a rule was added, because that is exactly when the list is reassigned.</item>
+/// <item>Recreating rows on every reload also contradicted the in-place toggle this class
+/// documents, and made the enabled toggle lose its visual state across a refresh.</item>
+/// </list>
+/// </para>
 /// </summary>
-public sealed class RuleRow
+public sealed class RuleRow : INotifyPropertyChanged
 {
     private const string Sep = "  \u00B7  ";      // middle dot separator
     private const string Quote = "\u201C";        // left double quote
     private const string EnDash = "\u2013";        // en dash, for ranges
 
-    public RuleRow(Rule rule) => Rule = rule;
+    private Rule _rule;
+    private bool _isVisible = true;
+
+    public RuleRow(Rule rule) => _rule = rule;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     /// <summary>
-    /// Mutable by design: the row is a view onto the rule, so a toggle updates in place rather
-    /// than replacing the instance the list is bound to.
+    /// The rule this row projects. Replacing it raises change notifications for everything
+    /// derived from it, so a reload updates the visible text in place.
     /// </summary>
-    public Rule Rule { get; set; }
+    public Rule Rule
+    {
+        get => _rule;
+        set
+        {
+            if (ReferenceEquals(_rule, value))
+            {
+                return;
+            }
+
+            _rule = value;
+
+            Raise(nameof(Rule), nameof(Name), nameof(IsEnabled), nameof(HasError),
+                  nameof(ErrorText), nameof(StatusText), nameof(Summary), nameof(PathSummary));
+        }
+    }
+
+    /// <summary>
+    /// Drives list filtering. An <c>ItemsControl</c> cannot be filtered by reassigning its
+    /// source, so rows hide themselves instead.
+    /// </summary>
+    public bool IsVisible
+    {
+        get => _isVisible;
+        set
+        {
+            if (_isVisible == value)
+            {
+                return;
+            }
+
+            _isVisible = value;
+            Raise(nameof(IsVisible));
+        }
+    }
 
     public string Id => Rule.Id;
 
@@ -39,7 +92,17 @@ public sealed class RuleRow
         : "Paused";
 
     /// <summary>Flips the enabled flag in place. The host persists it separately.</summary>
-    public void ToggleEnabled() => Rule = Rule with { Enabled = !Rule.Enabled };
+    public void ToggleEnabled()
+    {
+        Rule = Rule with { Enabled = !Rule.Enabled };
+    }
+
+    /// <summary>True when this row matches the given search text.</summary>
+    public bool Matches(string query) =>
+        query.Length == 0
+        || Name.Contains(query, StringComparison.OrdinalIgnoreCase)
+        || Summary.Contains(query, StringComparison.OrdinalIgnoreCase)
+        || PathSummary.Contains(query, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Primary description: what it does, to what.</summary>
     public string Summary => $"{DescribeAction(Rule.Then.Action, Rule.Then.SortBy)}{Sep}{DescribeConditions()}";
@@ -58,11 +121,25 @@ public sealed class RuleRow
 
             if (count == 1)
             {
-                return Formatting.Ellipsize(Rule.Monitor.Paths[0].Path);
+                // With a single folder, whether recursion is on changes nothing visible,
+                // so name the folder instead of saying "1 folder watched".
+                return Rule.Monitor.IncludeSubfolders
+                    ? Formatting.Ellipsize(Rule.Monitor.Paths[0].Path) + Sep + "including subfolders"
+                    : Formatting.Ellipsize(Rule.Monitor.Paths[0].Path);
             }
 
             return count + " folders watched"
                 + (Rule.Monitor.IncludeSubfolders ? Sep + "including subfolders" : string.Empty);
+        }
+    }
+
+    private void Raise([CallerMemberName] string? property = null, params string[] also)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(property));
+
+        foreach (string name in also)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 

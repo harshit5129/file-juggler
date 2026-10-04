@@ -54,8 +54,15 @@ public sealed record MonitorSpec
 {
     public List<MonitorEntry> Paths { get; init; } = [];
 
-    /// <summary>Descend into subdirectories. Depth-capped at runtime (see docs/performance).</summary>
-    public bool IncludeSubfolders { get; init; } = true;
+    /// <summary>
+    /// Descend into subdirectories. Depth-capped at runtime (see docs/performance.md).
+    /// <para>
+    /// Defaults to <c>false</c>: watching exactly the folder you named is the behaviour you can
+    /// predict. Reaching into every subfolder by default means a rule pointed at "Downloads"
+    /// silently also claims files nested arbitrarily deep inside it. Opt in per rule instead.
+    /// </para>
+    /// </summary>
+    public bool IncludeSubfolders { get; init; }
 }
 
 /// <summary>The <c>If</c> block. Every populated condition must match (logical AND).</summary>

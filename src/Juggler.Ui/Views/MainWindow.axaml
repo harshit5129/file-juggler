@@ -1,11 +1,18 @@
-<Window xmlns="https://github.com/avaloniaui"
+<!--
+  No hardcoded Width/Height here on purpose. An explicit size made Avalonia create the
+  platform frame at that many *physical* pixels while laying the content out in DIP, so on a
+  scaled display the right-hand edge of every rule row and toolbar was clipped off-screen and
+  its buttons could not be clicked. The size is now derived from the screen's working area in
+  ClampToWorkArea(), so there is a single source of truth for it.
+--><Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="using:Juggler.Ui.Views"
         x:Class="Juggler.Ui.Views.MainWindow"
         Title="File Juggler"
         Icon="/Assets/Icon.ico"
-        Width="1180" Height="760"
+        Width="1180" Height="800"
         MinWidth="900" MinHeight="560"
+        MaxWidth="1800" MaxHeight="1200"
         Background="{DynamicResource BgBrush}"
         WindowStartupLocation="CenterScreen">
 

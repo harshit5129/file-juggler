@@ -82,10 +82,60 @@ public sealed partial class MainWindow : Window
         _started = true;
 
         ApplyTheme();
+        ClampToWorkArea();
         Refresh();
     }
 
-    // ------------------------------------------------------------------ theme
+    /// <summary>
+    /// Forces the window's client area to a size that actually fits the screen.
+    /// <para>
+    /// The window was being created with a frame RenderScaling times too small: on a 125%
+    /// display the requested 1180 DIP produced a 1180 px frame instead of 1475 px, so roughly
+    /// 236 DIP of content - including every per-row Edit and overflow-menu button - rendered
+    /// outside the window and could not be clicked at all.
+    /// </para>
+    /// <para>
+    /// Two mistakes are corrected here. First, the working area is in physical pixels while
+    /// <see cref="ClientSize"/> is in DIP, so the comparison has to divide by the screen's
+    /// scaling; comparing them directly made the guard a no-op. Second, the assignment is
+    /// unconditional: the initial size is already inside the work area, so a "shrink only"
+    /// guard would never fire, and it is the frame size itself that is wrong. Reassigning
+    /// pushes the correctly scaled size through to the platform window.
+    /// </para>
+    /// </summary>
+    private void ClampToWorkArea()
+    {
+        try
+        {
+            var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+
+            if (screen is null)
+            {
+                return;
+            }
+
+            // WorkingArea is physical pixels; ClientSize is DIP. Mixing them silently
+            // disabled the whole clamp.
+            double scale = screen.Scaling > 0 ? screen.Scaling : 1.0;
+            double workWidthDip = screen.WorkingArea.Width / scale;
+            double workHeightDip = screen.WorkingArea.Height / scale;
+
+            // Leave slack so the window is never flush against the taskbar or screen edge.
+            double targetWidth = Math.Min(1180, workWidthDip * 0.96);
+            double targetHeight = Math.Min(820, workHeightDip * 0.92);
+
+            // Width/Height rather than ClientSize: assigning ClientSize was measured to leave
+            // the platform frame untouched, while Width goes through window sizing properly.
+            Width = Math.Max(MinWidth, targetWidth);
+            Height = Math.Max(MinHeight, targetHeight);
+        }
+        catch (Exception)
+        {
+            // Cosmetic only. A slightly oversized window is a far better outcome than an app
+            // that refuses to start because screen enumeration failed.
+        }
+    }
+// ------------------------------------------------------------------ theme
 
     private void OnToggleTheme(object? sender, RoutedEventArgs e)
     {

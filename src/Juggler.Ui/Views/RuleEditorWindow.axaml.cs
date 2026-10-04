@@ -41,6 +41,9 @@ public sealed partial class RuleEditorWindow : Window
     /// Suppresses handling while controls are filled from the rule. Without it, assigning Text
     /// fires TextChanged, which would overwrite the model with the previous rule's values.
     /// </summary>
+    /// <summary>Set once the named controls are resolved, so a re-open is a no-op.</summary>
+    private bool _initialized;
+
     private bool _binding;
 
     public RuleEditorWindow(RuleEditorViewModel vm, bool isNew)
@@ -53,14 +56,31 @@ public sealed partial class RuleEditorWindow : Window
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
-    protected override void OnInitialized()
+    /// <summary>
+    /// Resolves the named controls and fills the form.
+    /// <para>
+    /// This must run from <see cref="OnOpened"/>, not <c>OnInitialized</c>. For a Window,
+    /// Avalonia raises <c>OnInitialized</c> from inside the *base* constructor
+    /// (<c>Window..ctor</c> -> <c>OnAttachedToVisualTreeCore</c> -> <c>InitializeIfNeeded</c>),
+    /// which in C# runs before the derived constructor body. InitializeComponent() had
+    /// therefore not run yet, the logical tree was empty, and every
+    /// <c>Tree.Require&lt;T&gt;</c> threw "No TextBlock named 'HeaderTitle' found".
+    /// Opening the new-rule editor crashed the whole process.
+    /// <para>
+    /// <c>OnOpened</c> fires once the window is shown, which is the first moment the XAML is
+    /// guaranteed loaded. The <c>_initialized</c> guard makes a re-open a no-op rather than a
+    /// repopulate that would silently discard the user's edits.
+    /// </summary>
+    protected override void OnOpened(EventArgs e)
     {
-        base.OnInitialized();
+        base.OnOpened(e);
 
-        if (_binding)
+        if (_initialized)
         {
             return;
         }
+
+        _initialized = true;
 
         _headerTitle = this.Require<TextBlock>("HeaderTitle");
         _saveButton = this.Require<Button>("SaveButton");

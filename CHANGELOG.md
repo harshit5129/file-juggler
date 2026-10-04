@@ -9,6 +9,60 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Nothing yet.
 
+## [0.1.1] - Unreleased
+
+Bug-fix release. The 0.1.0 editor **crashed when adding a rule**, so upgrade before
+relying on it.
+
+### Fixed
+
+- **Adding a rule crashed the app.** Two independent causes:
+  1. `RuleEditorWindow` and `DiagnosticsWindow` resolved their controls in
+     `OnInitialized`. For a `Window`, Avalonia raises that from inside the *base*
+     constructor, which in C# runs before the derived constructor body, so
+     `InitializeComponent()` had not yet run and the logical tree was empty. Every
+     lookup threw `No TextBlock named 'HeaderTitle' found`. Moved to `OnOpened`,
+     which is the first point at which the XAML is guaranteed loaded.
+  2. `RulesView.ApplyFilter` replaced `ItemsControl.ItemsSource` wholesale on every
+     refresh. Adding a rule reassigns it, which tore down every item container
+     mid-frame and Avalonia's `ContentPresenter` null-referenced. The list now binds
+     its source once and filters by toggling row visibility. `RuleRow` also honours
+     the in-place design its own documentation described, and raises change
+     notifications, so the enabled toggle no longer loses state across a reload.
+- **Subfolder recursion defaulted to on.** A rule pointed at a folder silently
+  claimed files nested arbitrarily deep beneath it. Now opt-in per rule, with a
+  clearer label and a hint saying what the toggle actually does.
+- **Autostart always reported as unregistered.** The installer writes the Run value
+  as `"File Juggler"` while the diagnostics report queried `"FileJuggler"`. The
+  mismatch was silent, so a user could not tell whether autostart was working.
+  Locked by a contract test that reads the installer script.
+- Registry access in the diagnostics report is guarded by
+  `OperatingSystem.IsWindows()` rather than relying on a caught exception.
+
+### Changed
+
+- The configuration serializer now uses the source-generated `AppConfigJsonContext`.
+  That context already existed but was dead code: `ConfigStore` still called the
+  reflection-based overloads, which are `RequiresUnreferencedCode` and
+  `RequiresDynamicCode` and cannot survive NativeAOT. Its `UseStringEnumConverter`
+  was never enabled, which is very likely how enums came to be written as integers
+  in the first place. `GenerationMode` moved from `Metadata` to `Default`, because
+  `Metadata` emits type metadata only and cannot serialize.
+- Build warnings reduced from 10 to 2. The remaining two are Avalonia noting that the
+  two windows have no public parameterless constructor, which is expected for windows
+  that take constructor arguments.
+- Added `tools/uismoke.ps1`, which drives the real UI through UI Automation and fails
+  on a crash or a fresh stack trace. Both crashes above were invisible to the build
+  and to the existing tests; they only appeared once the app was actually clicked.
+
+### Known issues
+
+- **Right-hand controls can clip.** On a 125% display the window frame is created
+  smaller than Avalonia lays out, so trailing controls in the header, toolbars and
+  rule rows render past the window edge. DPI awareness is verified correct
+  (per-monitor v2, manifest embedded in both configurations), which rules out the
+  obvious cause. Explicitly resizing the window makes it render correctly, so the
+  frame does respond to size changes; only the initial size is wrong. Unresolved.
 ## [0.1.0] - 2026-10-04
 
 First public release. Pre-alpha: the engine, config layer and rule editor work

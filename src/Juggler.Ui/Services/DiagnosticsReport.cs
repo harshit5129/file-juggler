@@ -69,13 +69,22 @@ public sealed record DiagnosticsReport(
     /// </summary>
     public static bool IsAutostartRegistered()
     {
+        // Registry is a Windows-only API. The analyzer (CA1416) is right that this is reachable
+        // on every platform, and although the catch below would swallow the resulting exception,
+        // depending on an exception for control flow would misreport "not registered" on a
+        // platform where the question is meaningless.
+        if (!OperatingSystem.IsWindows())
+        {
+            return false;
+        }
+
         try
         {
             using Microsoft.Win32.RegistryKey? key =
                 Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
                     @"Software\Microsoft\Windows\CurrentVersion\Run");
 
-            return key?.GetValue("FileJuggler") is not null;
+            return key?.GetValue("File Juggler") is not null;
         }
         catch (Exception)
         {

@@ -24,9 +24,16 @@ public sealed partial class DiagnosticsWindow : Window
 
     private void InitializeComponent() => AvaloniaXamlLoader.Load(this);
 
-    protected override void OnInitialized()
+    /// <summary>
+    /// Resolves the named controls and fills the report.
+    /// <para>
+    /// Must run from OnOpened, not OnInitialized: for a Window, Avalonia raises
+    /// OnInitialized from inside the base constructor, which runs before the derived
+    /// constructor body, so InitializeComponent() has not yet run and the tree is empty.
+    /// </summary>
+    protected override void OnOpened(EventArgs e)
     {
-        base.OnInitialized();
+        base.OnOpened(e);
 
         if (_ready)
         {

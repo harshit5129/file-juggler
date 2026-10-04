@@ -1,4 +1,3 @@
-using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Juggler.Core.Rules;
@@ -16,25 +15,26 @@ namespace Juggler.Core.Configuration;
 public sealed class ConfigStore
 {
     /// <summary>
-    /// Options used for both read and write, so a load/save cycle is a true round trip.
+    /// Serialize and deserialize against the source-generated <see cref="AppJsonContext"/>.
     /// <para>
-    /// <see cref="JsonStringEnumConverter"/> is load-bearing, not cosmetic. Without it enums
-    /// serialize as bare integers, and the hand-editable <c>"mode": "Resident"</c> form that ships
-    /// in <c>config/example.rules.json</c> throws on read. Because a failed load leaves the
-    /// in-memory config at its empty default, the next save then wrote those defaults back over
-    /// the user's rules and reduced their config to <c>"rules": []</c>. Numbers are also unreadable
-    /// to a user editing the file by hand, which is the supported workflow.
+    /// The reflection-based overloads are unusable here: they are
+    /// <c>RequiresUnreferencedCode</c> and <c>RequiresDynamicCode</c>, and the resident daemon
+    /// is published with NativeAOT. Handing the generated context to the serializer is what lets
+    /// the trimmer and the AOT compiler see a closed set of types.
+    /// </para>
+    /// <para>
+    /// <c>UseStringEnumConverter</c> on that context is also what keeps enums written as names.
+    /// The reflection-based <c>JsonStringEnumConverter</c> did the same job but is itself
+    /// <c>RequiresDynamicCode</c>, so it could not be used in an AOT build - which is exactly how
+    /// the original bug arose: enums were written as integers because the AOT-safe way to write
+    /// them as names was not in use yet.
     /// </para>
     /// </summary>
-    private static readonly JsonSerializerOptions ReadOptions = new(JsonSerializerDefaults.Web)
-    {
-        PropertyNameCaseInsensitive = true,
-        ReadCommentHandling = JsonCommentHandling.Skip,
-        AllowTrailingCommas = true,
-        WriteIndented = true,
-        Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-        Converters = { new JsonStringEnumConverter(allowIntegerValues: true) },
-    };
+    private static string Write(AppConfig config) =>
+        JsonSerializer.Serialize(config, AppConfigJsonContext.Default.AppConfig);
+
+    private static AppConfig? ReadFrom(string json) =>
+        JsonSerializer.Deserialize(json, AppConfigJsonContext.Default.AppConfig);
 
     /// <summary>
     /// Per-user config location. Chosen over a roaming/Program Files path so no elevation is needed.
@@ -125,7 +125,7 @@ public sealed class ConfigStore
         AppConfig? parsed;
         try
         {
-            parsed = JsonSerializer.Deserialize<AppConfig>(json, ReadOptions);
+            parsed = ReadFrom(json);
         }
         catch (JsonException ex)
         {
@@ -178,7 +178,7 @@ public sealed class ConfigStore
             Directory.CreateDirectory(dir);
         }
 
-        string json = JsonSerializer.Serialize(config, ReadOptions);
+        string json = Write(config);
         string temp = Path + ".tmp";
 
         // Same directory so the rename stays on one volume and is therefore atomic.
@@ -252,11 +252,28 @@ public sealed class ConfigStore
     }
 }
 
-/// <summary>AOT-friendly serialisation contract. See docs/architecture.md.</summary>
+/// <summary>
+/// AOT-friendly serialisation contract. See docs/architecture.md.
+/// <para>
+/// This context existed but was never used: ConfigStore still went through the reflection-based
+/// overloads, which are RequiresUnreferencedCode and RequiresDynamicCode and cannot survive
+/// NativeAOT. That dead code is why the AOT analyzer warnings appeared, and it is very likely
+/// how enums ended up written as integers: UseStringEnumConverter was never enabled here, so
+/// nothing wrote enums as names.
+/// </para>
+/// <para>
+/// GenerationMode must stay Default, not Metadata: Metadata emits type metadata only, which is
+/// enough to validate but not to serialize or deserialize.
+/// </para>
+/// </summary>
 [JsonSourceGenerationOptions(
     WriteIndented = true,
     PropertyNameCaseInsensitive = true,
-    GenerationMode = JsonSourceGenerationMode.Metadata)]
+    PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
+    UseStringEnumConverter = true,
+    AllowTrailingCommas = true,
+    ReadCommentHandling = JsonCommentHandling.Skip,
+    GenerationMode = JsonSourceGenerationMode.Default)]
 [JsonSerializable(typeof(AppConfig))]
 [JsonSerializable(typeof(GeneralSettings))]
 [JsonSerializable(typeof(RunStats))]

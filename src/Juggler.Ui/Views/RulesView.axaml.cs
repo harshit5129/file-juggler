@@ -1,4 +1,5 @@
 using Avalonia;
+using System.Collections.ObjectModel;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
@@ -18,7 +19,13 @@ public sealed partial class RulesView : UserControl
     private StackPanel _emptyState = null!;
     private StackPanel _noMatchState = null!;
 
-    private List<RuleRow> _all = [];
+    /// <summary>
+    /// Live row collection. Bound to the list once and mutated in place. Never reassigned:
+    /// replacing an <c>ItemsControl.ItemsSource</c> while containers exist tore them down
+    /// mid-frame and Avalonia's ContentPresenter null-referenced, crashing the app on every
+    /// add. It also fought <see cref="RuleRow"/>'s in-place design.
+    /// </summary>
+    private readonly ObservableCollection<RuleRow> _all = [];
     private bool _ready;
 
     public RulesView() => InitializeComponent();
@@ -46,14 +53,64 @@ public sealed partial class RulesView : UserControl
         _emptyState = this.Require<StackPanel>("EmptyState");
         _noMatchState = this.Require<StackPanel>("NoMatchState");
 
+        // Bind once. See the note on _all for why this is not done per-refresh.
+        _ruleList.ItemsSource = _all;
+
         _ready = true;
 
         ApplyFilter();
     }
 
+    /// <summary>
+    /// Reconciles the visible rows against the config, matching by rule id.
+    /// <para>
+    /// Existing rows keep their instance and simply re-point at the new rule, so the enabled
+    /// toggle does not flicker and no container is recreated. Rows are added and removed only
+    /// for genuine differences.
+    /// </para>
+    /// </summary>
     public void Load(AppConfig config)
     {
-        _all = [.. config.Rules.Select(r => new RuleRow(r))];
+        HashSet<string> incoming = config.Rules.Select(r => r.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        for (int i = _all.Count - 1; i >= 0; i--)
+        {
+            if (!incoming.Contains(_all[i].Id))
+            {
+                _all.RemoveAt(i);
+            }
+        }
+
+        foreach (Rule rule in config.Rules)
+        {
+            RuleRow? existing = _all.FirstOrDefault(r =>
+                string.Equals(r.Id, rule.Id, StringComparison.OrdinalIgnoreCase));
+
+            if (existing is null)
+            {
+                _all.Add(new RuleRow(rule));
+            }
+            else
+            {
+                existing.Rule = rule;
+            }
+        }
+
+        // Keep the on-screen order matching the config, which is the order rules are
+        // evaluated in. Only worth doing when something actually moved.
+        List<string> wanted = config.Rules.Select(r => r.Id).ToList();
+        bool reordered = !_all.Select(r => r.Id).SequenceEqual(wanted, StringComparer.OrdinalIgnoreCase);
+
+        if (reordered)
+        {
+            RuleRow[] sorted = [.. _all.OrderBy(r =>
+                wanted.FindIndex(id => string.Equals(id, r.Id, StringComparison.OrdinalIgnoreCase)))];
+
+            for (int i = 0; i < sorted.Length; i++)
+            {
+                _all.Move(i, _all.IndexOf(sorted[i]));
+            }
+        }
 
         if (_ready)
         {
@@ -70,20 +127,21 @@ public sealed partial class RulesView : UserControl
 
         string query = _searchBox.Text?.Trim() ?? string.Empty;
 
-        List<RuleRow> visible = query.Length == 0
-            ? _all
-            :
-            [
-                .. _all.Where(r =>
-                    r.Name.Contains(query, StringComparison.OrdinalIgnoreCase)
-                    || r.Summary.Contains(query, StringComparison.OrdinalIgnoreCase)
-                    || r.PathSummary.Contains(query, StringComparison.OrdinalIgnoreCase))
-            ];
+        int visibleCount = 0;
 
-        _ruleList.ItemsSource = visible;
+        foreach (RuleRow row in _all)
+        {
+            bool matches = row.Matches(query);
+            row.IsVisible = matches;
+
+            if (matches)
+            {
+                visibleCount++;
+            }
+        }
 
         _emptyState.IsVisible = _all.Count == 0;
-        _noMatchState.IsVisible = _all.Count > 0 && visible.Count == 0;
+        _noMatchState.IsVisible = _all.Count > 0 && visibleCount == 0;
     }
 
     // ------------------------------------------------------------------ search
