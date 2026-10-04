@@ -1,5 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <!-- UpdateCheck lives in the UI project, and the version comparison it does is the kind of
+       off-by-a-digit bug that is cheap to test and expensive to ship. Referencing the UI project
+       from the test project pulls in Avalonia, which is fine: these tests never construct a
+       window, so no headless display is needed. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Juggler.Ui\Juggler.Ui.csproj" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>

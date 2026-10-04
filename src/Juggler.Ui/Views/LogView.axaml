@@ -14,7 +14,8 @@
                     <ComboBoxItem Content="Errors only" />
                     <ComboBoxItem Content="Warnings only" />
                 </ComboBox>
-                <CheckBox x:Name="FollowCheck" Content="Follow" IsChecked="True" VerticalAlignment="Center" />
+                <CheckBox x:Name="FollowCheck" Content="Follow" IsChecked="True" VerticalAlignment="Center"
+                          IsCheckedChanged="OnFollowChanged" />
             </StackPanel>
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
@@ -27,7 +28,7 @@
         <Border Grid.Row="1" Classes="inset" Padding="0">
             <Panel>
 
-                <ScrollViewer>
+                <ScrollViewer x:Name="LogScroll">
                     <ItemsControl x:Name="LogList">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate DataType="views:LogEntry">

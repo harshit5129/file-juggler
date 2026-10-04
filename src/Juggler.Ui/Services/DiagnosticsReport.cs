@@ -61,6 +61,7 @@ public sealed record DiagnosticsReport(
         sb.AppendLine($"  files processed : {Config.Stats.FilesProcessed}");
         sb.AppendLine($"  bytes processed : {Config.Stats.BytesProcessed}");
         sb.AppendLine($"  autostart       : {IsAutostartRegistered()}");
+        sb.AppendLine($"  version         : {UpdateCheck.CurrentVersion}");
 
         if (LoadError is not null)
         {

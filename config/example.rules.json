@@ -134,5 +134,7 @@
     "filesMatched": 0,
     "rulesFailed": 0,
     "lastRunAt": null
-  }
+  },
+
+  "setupCompleted": true
 }

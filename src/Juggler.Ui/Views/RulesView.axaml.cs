@@ -39,6 +39,21 @@ public sealed partial class RulesView : UserControl
     /// </summary>
     public event Action<RuleCommand>? Command;
 
+    /// <summary>Raised by the toolbar Import/Export buttons. Persistence stays with the host.</summary>
+    public event Action? ImportRequested;
+
+    /// <inheritdoc cref="ImportRequested"/>
+    public event Action? ExportRequested;
+
+    /// <summary>
+    /// Raised by the empty state's primary button. Reopens setup even when it was skipped, so
+    /// skipping is never a one-way door.
+    /// </summary>
+    public event Action? GetStartedRequested;
+
+    /// <summary>Raised to open the manual run window for a rule.</summary>
+    public event Action<Rule>? RunRequested;
+
     protected override void OnInitialized()
     {
         base.OnInitialized();
@@ -159,6 +174,20 @@ public sealed partial class RulesView : UserControl
     private void OnNewRule(object? sender, RoutedEventArgs e) =>
         Command?.Invoke(new RuleCommand(Rule.New(), RuleCommandKind.New));
 
+    private void OnImport(object? sender, RoutedEventArgs e) => ImportRequested?.Invoke();
+
+    private void OnExport(object? sender, RoutedEventArgs e) => ExportRequested?.Invoke();
+
+    private void OnGetStarted(object? sender, RoutedEventArgs e) => GetStartedRequested?.Invoke();
+
+    private void OnRun(object? sender, RoutedEventArgs e)
+    {
+        if ((sender as Control)?.Tag is RuleRow row)
+        {
+            RunRequested?.Invoke(row.Rule);
+        }
+    }
+
     private void OnEdit(object? sender, RoutedEventArgs e)
     {
         if ((sender as Control)?.Tag is RuleRow row)
@@ -196,6 +225,9 @@ public sealed partial class RulesView : UserControl
             row.Rule with { Id = Rule.New().Id, Name = row.Rule.Name + " (copy)" },
             RuleCommandKind.New));
 
+        MenuItem run = new() { Header = "Run now…" };
+        run.Click += (_, _) => RunRequested?.Invoke(row.Rule);
+
         MenuItem toggle = new() { Header = row.IsEnabled ? "Pause rule" : "Resume rule" };
         toggle.Click += (_, _) =>
         {
@@ -212,7 +244,7 @@ public sealed partial class RulesView : UserControl
 
         ContextMenu menu = new()
         {
-            ItemsSource = new object?[] { edit, duplicate, toggle, new Separator(), delete },
+            ItemsSource = new object?[] { edit, run, duplicate, toggle, new Separator(), delete },
         };
 
         if (sender is Control control)

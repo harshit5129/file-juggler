@@ -130,7 +130,7 @@
                             <TextBlock Text="Allow notifications" FontWeight="SemiBold" />
                             <TextBlock Classes="caption wrap" Text="Master switch. Individual events below still need to be picked." />
                         </StackPanel>
-                        <ToggleSwitch Grid.Column="1" x:Name="NotifySwitch" />
+                        <ToggleSwitch Grid.Column="1" x:Name="NotifySwitch" IsCheckedChanged="OnNotifyMasterChanged" />
                     </Grid>
 
                     <StackPanel x:Name="NotifyDetails" IsVisible="False" Spacing="10" Margin="0,4,0,0">

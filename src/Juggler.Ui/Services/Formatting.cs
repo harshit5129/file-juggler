@@ -6,7 +6,7 @@ namespace Juggler.Ui.Services;
 /// </summary>
 public static class Formatting
 {
-    private static readonly string[] Units = ["B", "KB", "MB", "GB", "TB"];
+    private static readonly string[] Units = ["B", "KB", "MB", "GB", "TB", "PB", "EB"];
 
     /// <summary>Human-readable byte size, e.g. <c>14.29 GB</c>. Matches the status bar.</summary>
     public static string Bytes(long bytes)

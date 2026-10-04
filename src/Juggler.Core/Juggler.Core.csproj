@@ -17,4 +17,14 @@
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!--
+      A handful of members are internal test seams rather than public API: the wildcard matcher
+      and the filename sanitiser. Both are pure functions with no caller outside this assembly,
+      and widening them to public purely so a test can reach them would make them API that other
+      code is free to depend on.
+    -->
+    <InternalsVisibleTo Include="Juggler.Core.Tests" />
+  </ItemGroup>
+
 </Project>

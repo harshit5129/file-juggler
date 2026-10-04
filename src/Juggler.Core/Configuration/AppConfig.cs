@@ -87,4 +87,16 @@ public sealed record AppConfig
 
     [JsonPropertyName("stats")]
     public RunStats Stats { get; init; } = new();
+
+    /// <summary>
+    /// Whether first-run setup has been completed or explicitly skipped.
+    /// <para>
+    /// This cannot be inferred from the config file being absent. The editor writes this file the
+    /// moment any setting is touched, which is typically long before the first rule exists, so
+    /// "no file" only distinguishes a genuinely untouched install from one whose file was
+    /// deleted. An explicit flag is the only reliable signal. See SetupWizard.
+    /// </para>
+    /// </summary>
+    [JsonPropertyName("setupCompleted")]
+    public bool SetupCompleted { get; init; }
 }

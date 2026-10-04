@@ -1,0 +1,100 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="using:Juggler.Ui.Views"
+        x:Class="Juggler.Ui.Views.RunRuleWindow"
+        x:DataType="local:RunRuleWindow"
+        Title="Run rule"
+        Width="780" Height="620"
+        MinWidth="560" MinHeight="440"
+        Background="{DynamicResource BgBrush}"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- HEAD -->
+        <Border Grid.Row="0" Padding="24,20,24,16">
+            <StackPanel Spacing="6">
+                <TextBlock Classes="sectionLabel" Text="RUN NOW" />
+                <TextBlock x:Name="TitleText" Classes="title" />
+                <TextBlock x:Name="ModeText" Classes="caption wrap" />
+            </StackPanel>
+        </Border>
+
+        <!-- WHICH FOLDER -->
+        <Border Grid.Row="1" Margin="24,0,24,12">
+            <Border Classes="inset" Padding="14,12">
+                <StackPanel Spacing="8">
+                    <TextBlock Classes="secondary" Text="Which folder?" />
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBox Grid.Column="0" x:Name="PathBox"
+                                 Classes="mono" TextChanged="OnPreview"
+                                 Watermark="C:\Users\you\Downloads" />
+                        <Button Grid.Column="1" Classes="ghost" Content="Browse…"
+                                x:Name="BrowseButton" Click="OnBrowse" Margin="8,0,0,0" />
+                    </Grid>
+
+                    <TextBlock x:Name="FolderHintText" Classes="caption wrap" />
+
+                    <TextBlock Classes="caption mono"
+                               x:Name="TargetText" Margin="0,2,0,0"
+                               TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+            </Border>
+        </Border>
+
+        <!-- THE LIST -->
+        <Border Grid.Row="2" Margin="24,0,24,0">
+            <Border Classes="inset" Padding="0">
+                <Panel>
+                    <ScrollViewer>
+                        <ItemsControl x:Name="ResultList">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="local:RunRuleWindow+ResultRow">
+                                    <Border BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,0,0,1">
+                                        <Grid ColumnDefinitions="*,Auto" Margin="14,9">
+                                            <StackPanel Grid.Column="0" Spacing="3">
+                                                <TextBlock Classes="mono" Text="{Binding Source}"
+                                                           TextTrimming="CharacterEllipsis" />
+                                                <TextBlock Classes="caption mono" Text="{Binding Target}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           IsVisible="{Binding HasTarget}" />
+                                                <TextBlock Classes="caption wrap" Text="{Binding Note}"
+                                                           IsVisible="{Binding HasNote}" />
+                                            </StackPanel>
+                                            <TextBlock Grid.Column="1" Classes="caption"
+                                                       Text="{Binding Outcome}" VerticalAlignment="Center"
+                                                       Margin="12,0,0,0" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+
+                    <StackPanel x:Name="EmptyState" Spacing="8" MaxWidth="380"
+                                HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <TextBlock Text="Nothing to do here" Classes="title" HorizontalAlignment="Center" />
+                        <TextBlock Classes="secondary wrap" TextAlignment="Center"
+                                   Text="No file in this folder matches this rule. Try a different folder, or change the rule's conditions." />
+                    </StackPanel>
+                </Panel>
+            </Border>
+        </Border>
+
+        <!-- FOOT -->
+        <Border Grid.Row="3" Padding="24,16,24,20"
+                BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" x:Name="Summary" Classes="secondary"
+                           VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,16,0"
+                           Text="Nothing chosen yet." />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                    <Button x:Name="RunButton" Classes="accent" Content="Go" Click="OnRun" />
+                    <Button Classes="ghost" Content="Close" Click="OnClose" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+    </Grid>
+</Window>

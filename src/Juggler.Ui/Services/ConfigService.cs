@@ -90,6 +90,75 @@ public sealed class ConfigService : IDisposable
         return TrySave(Current with { Rules = rules });
     }
 
+    /// <summary>
+    /// Merges externally loaded rules into the current config in a single save.
+    /// Blank or colliding ids are reassigned so an import can never silently replace
+    /// an existing rule or trip the duplicate-id validator.
+    /// </summary>
+    public bool ImportRules(IEnumerable<Rule> imported) =>
+        TrySave(Current with { Rules = [.. Current.Rules, .. Dedupe(imported, Current.Rules)] });
+
+    /// <summary>
+    /// Writes a whole set of rules in one save.
+    /// <para>
+    /// The wizard must not call <see cref="Upsert"/> per rule: each save renames the config file,
+    /// which the watcher sees, which triggers a reload while the wizard's own writes are still
+    /// landing. One save means one rename and one reload.
+    /// </para>
+    /// </summary>
+    public bool ReplaceRules(IEnumerable<Rule> rules)
+    {
+        AppConfig candidate = Current with { Rules = [.. Dedupe(rules, [])] };
+
+        // Setup proposes; it does not act. Dry-run stays on so the rules the user just accepted
+        // report what they would do instead of touching files unattended.
+        if (candidate.General is { DryRun: false })
+        {
+            candidate = candidate with { General = candidate.General with { DryRun = true } };
+        }
+
+        return TrySave(candidate);
+    }
+
+    /// <summary>
+    /// Stamps the first-run flag so the wizard is not shown again.
+    /// <para>
+    /// A separate save from <see cref="ReplaceRules"/> on purpose: skipping setup must not
+    /// disturb any rules the user already had.
+    /// </para>
+    /// </summary>
+    public bool MarkSetupComplete() =>
+        TrySave(Current with { SetupCompleted = true });
+
+    /// <summary>
+    /// Ensures ids are unique against <paramref name="against"/>, reassigning any that are
+    /// blank or already taken. Validation errors are stripped: they are session state, never
+    /// file content, so re-importing a file must not resurrect them.
+    /// </summary>
+    private static List<Rule> Dedupe(IEnumerable<Rule> candidates, IReadOnlyList<Rule> against)
+    {
+        HashSet<string> taken = new(against.Select(r => r.Id), StringComparer.OrdinalIgnoreCase);
+        List<Rule> result = [];
+
+        foreach (Rule rule in candidates)
+        {
+            string id = rule.Id;
+
+            if (string.IsNullOrWhiteSpace(id) || !taken.Add(id))
+            {
+                do
+                {
+                    id = Rule.New().Id;
+                }
+                while (!taken.Add(id));
+            }
+
+            result.Add(rule with { Id = id, Errors = [] });
+        }
+
+        return result;
+    }
+
     public bool SaveGeneral(GeneralSettings general) =>
         TrySave(Current with { General = general });
 

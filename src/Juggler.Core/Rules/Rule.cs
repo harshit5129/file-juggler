@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Juggler.Core.Rules;
 
 /// <summary>How a rule's name pattern is interpreted.</summary>
@@ -132,8 +134,10 @@ public sealed record Rule
     public ActionSpec Then { get; init; } = new();
 
     /// <summary>Set when the last validation pass failed. Displayed in the UI; never persisted.</summary>
+    [JsonIgnore]
     public IReadOnlyList<string> Errors { get; init; } = [];
 
+    [JsonIgnore]
     public bool HasErrors => Errors.Count > 0;
 
     /// <summary>Creates a rule with a fresh unique-enough identifier.</summary>

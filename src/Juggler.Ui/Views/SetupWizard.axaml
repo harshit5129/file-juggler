@@ -1,0 +1,123 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Juggler.Ui.ViewModels"
+        x:Class="Juggler.Ui.Views.SetupWizard"
+        x:DataType="vm:SetupWizardViewModel"
+        Title="Set up File Juggler"
+        Width="620" Height="560"
+        MinWidth="520" MinHeight="480"
+        Background="{DynamicResource BgBrush}"
+        CanResize="True"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid RowDefinitions="Auto,*,Auto">
+
+        <!-- HEAD -->
+        <Border Grid.Row="0" Padding="28,26,28,20">
+            <StackPanel Spacing="6">
+                <TextBlock Classes="sectionLabel" Text="First-time setup" />
+                <TextBlock Text="{Binding Headline}" Classes="title" TextWrapping="Wrap" />
+                <TextBlock Classes="secondary wrap" Text="{Binding Subtitle}" />
+            </StackPanel>
+        </Border>
+
+        <!-- BODY -->
+        <Grid Grid.Row="1">
+
+            <!-- PAGE 1: folders -->
+            <ScrollViewer IsVisible="{Binding FoldersVisible}">
+                <StackPanel Margin="28,0,28,0" Spacing="10">
+
+                    <Border Classes="inset" Padding="16" IsVisible="{Binding NoFoldersFound}">
+                        <TextBlock Classes="secondary wrap" Text="{Binding NoFoldersFoundText}" />
+                    </Border>
+
+                    <ItemsControl ItemsSource="{Binding Folders}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:FolderChoice">
+                                <Border Classes="inset" Padding="14,12" Margin="0,0,0,8">
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <CheckBox Grid.Column="0"
+                                                  IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                  VerticalAlignment="Center" Margin="0,0,12,0" />
+                                        <StackPanel Grid.Column="1" Spacing="2">
+                                            <TextBlock Text="{Binding Label}" FontWeight="SemiBold" />
+                                            <TextBlock Classes="caption mono"
+                                                       Text="{Binding Path}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Classes="caption wrap" Margin="0,4,0,0"
+                               Text="Only the folder you tick is watched. Subfolders are not touched unless you turn that on per rule afterwards." />
+                </StackPanel>
+            </ScrollViewer>
+
+            <!-- PAGE 2: rules -->
+            <ScrollViewer IsVisible="{Binding RulesVisible}">
+                <StackPanel Margin="28,0,28,0" Spacing="10">
+
+                    <Border Classes="inset" Padding="16">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Dry run stays on" FontWeight="SemiBold" />
+                            <TextBlock Classes="caption wrap"
+                                       Text="Setup leaves dry-run enabled, so these rules report what they would do and change nothing. Turn it off in Settings when you are ready." />
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Classes="caption" Text="RULES TO CREATE" Margin="0,6,0,0" />
+
+                    <ItemsControl ItemsSource="{Binding Rules}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="vm:RuleChoice">
+                                <Border Classes="inset" Padding="14,12" Margin="0,0,0,8">
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <CheckBox Grid.Column="0"
+                                                  IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                                  VerticalAlignment="Center" Margin="0,0,12,0" />
+                                        <StackPanel Grid.Column="1" Spacing="3">
+                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                            <TextBlock Classes="caption wrap" Text="{Binding Rationale}" />
+                                            <TextBlock Classes="caption mono"
+                                                       Text="{Binding Destination}"
+                                                       TextTrimming="CharacterEllipsis" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Classes="caption wrap" Margin="0,4,0,0"
+                               Text="Every rule is created switched off. Turn on the ones you want from the list, then read what they report before turning dry-run off." />
+                </StackPanel>
+            </ScrollViewer>
+
+        </Grid>
+
+        <!-- FOOT -->
+        <Border Grid.Row="2" Padding="28,18,28,22" BorderBrush="{DynamicResource DividerBrush}" BorderThickness="0,1,0,0">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0" Classes="ghost" Content="Skip" Click="OnSkip"
+                        VerticalAlignment="Center" />
+
+                <Button Grid.Column="1" Classes="ghost" Content="Back" Click="OnBack"
+                        IsVisible="{Binding CanGoBack}" HorizontalAlignment="Right" Margin="0,0,8,0" />
+
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <TextBlock Classes="caption" Text="{Binding Summary}" VerticalAlignment="Center"
+                               IsVisible="{Binding RulesVisible}" Margin="0,0,4,0" />
+                    <Button Grid.Column="0" Classes="accent" Content="Next" Click="OnNext"
+                            IsVisible="{Binding FoldersVisible}" />
+                    <Button Classes="accent" Content="Finish setup" Click="OnAccept"
+                            IsVisible="{Binding RulesVisible}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+    </Grid>
+</Window>

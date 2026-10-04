@@ -35,8 +35,4 @@ public sealed partial class App : Application
 
     /// <summary>Switches between the light and dark palettes. Both are first-class.</summary>
     public static void ApplyTheme(ThemeVariant variant) => Current!.RequestedThemeVariant = variant;
-
-    /// <summary>Dark, light, or follow the OS setting.</summary>
-    public static ThemeVariant Resolve(bool dark, bool followSystem) =>
-        followSystem ? ThemeVariant.Default : dark ? ThemeVariant.Dark : ThemeVariant.Light;
 }

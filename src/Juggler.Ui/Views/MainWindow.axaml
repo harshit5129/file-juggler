@@ -1,9 +1,11 @@
 <!--
-  No hardcoded Width/Height here on purpose. An explicit size made Avalonia create the
-  platform frame at that many *physical* pixels while laying the content out in DIP, so on a
-  scaled display the right-hand edge of every rule row and toolbar was clipped off-screen and
-  its buttons could not be clicked. The size is now derived from the screen's working area in
-  ClampToWorkArea(), so there is a single source of truth for it.
+  The initial size below is a starting point only. An explicit size once made Avalonia
+  create the platform frame at that many *physical* pixels while laying the content out
+  in DIP, so on a scaled display the right-hand edge of every rule row and toolbar was
+  clipped off-screen and its buttons could not be clicked. ClampToWorkArea() derives the
+  real size from the screen's working area, so there is a single source of truth for it.
+  Do not remove Width/Height: without them the window opens at the platform default.
+  Do not "fix" clipping by editing the numbers here: fix ClampToWorkArea() instead.
 --><Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:views="using:Juggler.Ui.Views"
@@ -16,10 +18,29 @@
         Background="{DynamicResource BgBrush}"
         WindowStartupLocation="CenterScreen">
 
-    <Grid RowDefinitions="Auto,*,Auto">
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <!-- UPDATE NOTICE -->
+        <!-- Quiet by design: it is a suggestion, not an alarm. Nothing here changes files, and
+             there is no download-and-replace - the user decides when to upgrade. -->
+        <Border Grid.Row="0" x:Name="UpdateBanner" IsVisible="False"
+                Background="{DynamicResource AccentSoftBrush}"
+                BorderBrush="{DynamicResource BorderBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="20,9">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock x:Name="UpdateText" Grid.Column="0"
+                           VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,16,0" />
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8"
+                            VerticalAlignment="Center">
+                    <Button Classes="ghost" Content="Download" Click="OnOpenReleasePage" />
+                    <Button Classes="ghost" Content="Dismiss" Click="OnDismissUpdate" />
+                </StackPanel>
+            </Grid>
+        </Border>
 
         <!-- HEADER -->
-        <Border Grid.Row="0"
+        <Border Grid.Row="1"
                 Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,0,0,1"
@@ -76,7 +97,7 @@
         </Border>
 
         <!-- CONTENT -->
-        <TabControl Grid.Row="1" x:Name="Tabs">
+        <TabControl Grid.Row="2" x:Name="Tabs">
 
             <TabItem Header="Rules">
                 <views:RulesView x:Name="Rules" />
@@ -93,7 +114,7 @@
         </TabControl>
 
         <!-- STATUS BAR -->
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
                 Background="{DynamicResource SurfaceBrush}"
                 BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,1,0,0"
@@ -119,7 +140,7 @@
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
                     <TextBlock x:Name="StatusStats" Classes="status" Text="0 files processed" />
                     <TextBlock x:Name="StatusBytes" Classes="status" Text="0 B" />
-                    <TextBlock x:Name="StatusPath" Classes="caption" />
+                    <TextBlock x:Name="StatusPath" Classes="caption" TextTrimming="CharacterEllipsis" MaxWidth="420" />
                 </StackPanel>
             </Grid>
         </Border>

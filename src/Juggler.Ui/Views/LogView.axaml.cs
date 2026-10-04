@@ -38,6 +38,8 @@ public sealed partial class LogView : UserControl
 {
     private ComboBox _severityFilter = null!;
     private ItemsControl _logList = null!;
+    private ScrollViewer _logScroll = null!;
+    private CheckBox _followCheck = null!;
     private StackPanel _emptyState = null!;
     private TextBlock _footerText = null!;
 
@@ -60,6 +62,8 @@ public sealed partial class LogView : UserControl
 
         _severityFilter = this.Require<ComboBox>("SeverityFilter");
         _logList = this.Require<ItemsControl>("LogList");
+        _logScroll = this.Require<ScrollViewer>("LogScroll");
+        _followCheck = this.Require<CheckBox>("FollowCheck");
         _emptyState = this.Require<StackPanel>("EmptyState");
         _footerText = this.Require<TextBlock>("FooterText");
 
@@ -175,9 +179,29 @@ public sealed partial class LogView : UserControl
         _footerText.Text = _all.Count == 0
             ? "No log file yet - it is created when the daemon first runs."
             : $"{filtered.Count} of {_all.Count} shown";
+
+        if (_followCheck.IsChecked == true && filtered.Count > 0)
+        {
+            // Deferred past layout: scrolling synchronously here runs before the new
+            // containers are measured, so the offset would clamp to the old extent.
+            Avalonia.Threading.Dispatcher.UIThread.Post(_logScroll.ScrollToEnd);
+        }
     }
 
     private void OnFilterChanged(object? sender, SelectionChangedEventArgs e) => ApplyFilter();
+
+    private void OnFollowChanged(object? sender, RoutedEventArgs e)
+    {
+        if (!_ready)
+        {
+            return;
+        }
+
+        if (_followCheck.IsChecked == true)
+        {
+            Avalonia.Threading.Dispatcher.UIThread.Post(_logScroll.ScrollToEnd);
+        }
+    }
 
     private void OnRefresh(object? sender, RoutedEventArgs e)
     {

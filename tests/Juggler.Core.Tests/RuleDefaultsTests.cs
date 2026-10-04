@@ -53,6 +53,21 @@ public sealed class RuleDefaultsTests
     }
 
     /// <summary>
+    /// The shipped example is copied straight into the config folder by users, and the smoke
+    /// harness copies it in before driving the UI. Both would otherwise be met by the first-run
+    /// wizard, which is modal on the main window: the rules they meant to exercise never appear,
+    /// and every subsequent UI step fails because a modal is in the way.
+    /// </summary>
+    [Fact]
+    public void ExampleConfig_SkipsFirstRunWizard()
+    {
+        var result = new ConfigStore(ExampleConfigPath()).Load();
+
+        Assert.Null(result.Error);
+        Assert.True(result.Config.SetupCompleted);
+    }
+
+    /// <summary>
     /// The shipped example must state this explicitly per rule rather than leaning on the
     /// default, so the file documents its own behaviour instead of tracking a code change.
     /// </summary>

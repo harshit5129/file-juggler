@@ -5,6 +5,7 @@ using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
 using Juggler.Core.Configuration;
@@ -27,6 +28,12 @@ public sealed partial class MainWindow : Window
     private TextBlock _statusBytes = null!;
     private TextBlock _statusPath = null!;
     private Border _dryRunChip = null!;
+    private Border _updateBanner = null!;
+    private TextBlock _updateText = null!;
+
+    private UpdateCheckResult? _update;
+    private bool _updateChecked;
+    private bool _updateDismissed;
 
     private ConfigService? _config;
     private RulesView? _rulesView;
@@ -64,6 +71,8 @@ public sealed partial class MainWindow : Window
         _statusBytes = this.Require<TextBlock>("StatusBytes");
         _statusPath = this.Require<TextBlock>("StatusPath");
         _dryRunChip = this.Require<Border>("DryRunChip");
+        _updateBanner = this.Require<Border>("UpdateBanner");
+        _updateText = this.Require<TextBlock>("UpdateText");
 
         _rulesView = this.Find<RulesView>() ?? throw new InvalidOperationException("Rules view missing.");
         _logView = this.Find<LogView>() ?? throw new InvalidOperationException("Log view missing.");
@@ -74,6 +83,10 @@ public sealed partial class MainWindow : Window
         // Subscribed before the first render so the status bar is never briefly wrong.
         _config.Changed += OnConfigChanged;
         _rulesView.Command += OnRuleCommand;
+        _rulesView.ImportRequested += OnImportRequested;
+        _rulesView.ExportRequested += OnExportRequested;
+        _rulesView.GetStartedRequested += RunSetup;
+        _rulesView.RunRequested += OnRunRule;
 
         // Subscribed once here, not in Refresh, which runs on every config change.
         // Re-subscribing there would stack a duplicate handler per reload.
@@ -83,6 +96,125 @@ public sealed partial class MainWindow : Window
 
         ApplyTheme();
         ClampToWorkArea();
+        Refresh();
+
+        MaybeRunSetup();
+        CheckForUpdate();
+    }
+
+    /// <summary>
+    /// Asks once, after the window is up, whether a newer release exists.
+    /// <para>
+    /// Deliberately last and fire-and-forget: the app is usable the moment it opens, and a slow
+    /// or unreachable network must not delay that. Nothing is downloaded - the banner only points
+    /// at the release, because replacing a running executable unattended is not something this
+    /// build can verify.
+    /// </para>
+    /// </summary>
+    private async void CheckForUpdate()
+    {
+        if (_updateChecked)
+        {
+            return;
+        }
+
+        _updateChecked = true;
+
+        UpdateCheckResult result = await UpdateCheck.CheckAsync();
+
+        _update = result;
+
+        if (result.UpdateAvailable && !_updateDismissed)
+        {
+            ShowUpdateBanner(result);
+        }
+    }
+
+    private void ShowUpdateBanner(UpdateCheckResult result)
+    {
+        _updateText.Text =
+            $"Version {result.LatestVersion} is out. You have {UpdateCheck.CurrentVersion}.";
+        _updateBanner.IsVisible = true;
+    }
+
+    private void OnDismissUpdate(object? sender, RoutedEventArgs e)
+    {
+        _updateDismissed = true;
+        _updateBanner.IsVisible = false;
+    }
+
+    private void OnOpenReleasePage(object? sender, RoutedEventArgs e)
+    {
+        if (_update is not { ReleaseUrl.Length: > 0 } update)
+        {
+            return;
+        }
+
+        try
+        {
+            System.Diagnostics.Process.Start(
+                new System.Diagnostics.ProcessStartInfo(update.ReleaseUrl) { UseShellExecute = true });
+        }
+        catch (Exception)
+        {
+            // Opening a browser is a convenience. The release URL is public and in the docs, so
+            // failing silently costs nothing.
+        }
+    }
+
+    /// <summary>
+    /// Shows first-run setup if it has neither been completed nor skipped.
+    /// <para>
+    /// Deferred to the next dispatcher frame: the wizard is modal on this window, and opening it
+    /// from inside OnOpened while the layout pass is still running showed it behind the main
+    /// window, stealing input before the frame settled.
+    /// </para>
+    /// </summary>
+    private void MaybeRunSetup()
+    {
+        if (_config is null || _config.Current.SetupCompleted)
+        {
+            return;
+        }
+
+        Avalonia.Threading.Dispatcher.UIThread.Post(RunSetup);
+    }
+
+    /// <summary>
+    /// Runs setup and persists whichever way the user left it.
+    /// <para>
+    /// Reachable from the empty state's "Get started" button as well as from first launch, so
+    /// skipping is never a one-way door.
+    /// </para>
+    /// </summary>
+    private void RunSetup()
+    {
+        if (_config is null)
+        {
+            return;
+        }
+
+        SetupWizardViewModel vm = new();
+        SetupWizard wizard = new(vm);
+
+        wizard.ShowDialog(this);
+
+        if (!vm.Completed)
+        {
+            return;
+        }
+
+        // Skip writes only the flag, leaving any existing rules alone. Accepting writes the whole
+        // chosen set in one save, so the watcher sees a single rename rather than one per rule.
+        if (vm.Accepted)
+        {
+            _config.ReplaceRules(vm.SelectedRules);
+        }
+        else
+        {
+            _config.MarkSetupComplete();
+        }
+
         Refresh();
     }
 
@@ -141,6 +273,7 @@ public sealed partial class MainWindow : Window
     {
         _dark = !_dark;
         ApplyTheme();
+        Refresh();
     }
 
     private void ApplyTheme()
@@ -203,6 +336,116 @@ public sealed partial class MainWindow : Window
         window.Show(this);
     }
 
+    /// <summary>
+    /// Imports rules from a user-picked JSON file, merged into the current config.
+    /// Unreadable files are ignored: there is no dialog infrastructure in this app,
+    /// and the file picker already limits selection to JSON.
+    /// </summary>
+    private async void OnImportRequested()
+    {
+        if (_config is null)
+        {
+            return;
+        }
+
+        if (TopLevel.GetTopLevel(this)?.StorageProvider is not { } provider)
+        {
+            return;
+        }
+
+        IReadOnlyList<IStorageFile> picked = await provider.OpenFilePickerAsync(
+            new FilePickerOpenOptions
+            {
+                Title = "Import rules",
+                AllowMultiple = false,
+                FileTypeFilter = [new FilePickerFileType("JSON") { Patterns = ["*.json"] }],
+            });
+
+        if (picked.Count == 0 || picked[0].TryGetLocalPath() is not { } local)
+        {
+            return;
+        }
+
+        ConfigStore.LoadResult loaded;
+        try
+        {
+            loaded = new ConfigStore(local).Load();
+        }
+        catch (Exception)
+        {
+            return;
+        }
+
+        if (loaded.Error is not null || loaded.Config.Rules.Count == 0)
+        {
+            return;
+        }
+
+        _config.ImportRules(loaded.Config.Rules);
+        Refresh();
+    }
+
+    private async void OnExportRequested()
+    {
+        if (_config is null)
+        {
+            return;
+        }
+
+        if (TopLevel.GetTopLevel(this)?.StorageProvider is not { } provider)
+        {
+            return;
+        }
+
+        IStorageFile? picked = await provider.SaveFilePickerAsync(
+            new FilePickerSaveOptions
+            {
+                Title = "Export rules",
+                SuggestedFileName = "rules.json",
+                DefaultExtension = "json",
+                FileTypeChoices = [new FilePickerFileType("JSON") { Patterns = ["*.json"] }],
+            });
+
+        if (picked?.TryGetLocalPath() is not { } local)
+        {
+            return;
+        }
+
+        try
+        {
+            if (File.Exists(_config.ConfigPath))
+            {
+                File.Copy(_config.ConfigPath, local, overwrite: true);
+            }
+            else
+            {
+                // Nothing saved yet: write the live config so the export is never empty.
+                IReadOnlyList<ConfigIssue> issues = new ConfigStore(local).Save(_config.Current);
+                if (issues.Any(i => i.Severity == IssueSeverity.Error))
+                {
+                    return;
+                }
+            }
+        }
+        catch (Exception)
+        {
+            // Export is a convenience. The live config is untouched on failure.
+        }
+    }
+
+    /// <summary>Opens the manual run window for one rule.</summary>
+    private void OnRunRule(Rule rule)
+    {
+        if (_config is null)
+        {
+            return;
+        }
+
+        RunRuleWindow window = new(rule, _config);
+        window.Closed += (_, _) => Refresh();
+        window.Show(this);
+    }
+
     private void OnDoctor(object? sender, RoutedEventArgs e)
     {
         if (_config is not null)
@@ -256,12 +499,12 @@ public sealed partial class MainWindow : Window
 
         if (errors > 0)
         {
-            ShowChip("DangerBrush", "DangerSoftBrush",
+            ShowChip("DangerBrush",
                 $"{errors} config error{(errors == 1 ? "" : "s")}");
         }
         else if (config.Rules.Count > 0)
         {
-            ShowChip("SuccessBrush", "SuccessSoftBrush", "Watching");
+            ShowChip("SuccessBrush", "Watching");
         }
         else
         {
@@ -271,11 +514,12 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>
-    /// The <c>background</c> parameter is intentionally unused: the chip used to be a filled
-    /// pill, which put a second colour on a screen meant to carry exactly one accent. Tinting
-    /// the dot and the word is enough to tell watching apart from an error.
+    /// Tints the dot and the word to tell watching apart from an error. The chip used to
+    /// be a filled pill, which put a second colour on a screen meant to carry exactly one
+    /// accent; the background fill was then removed, so there is deliberately no
+    /// background parameter.
     /// </summary>
-    private void ShowChip(string foreground, string background, string text)
+    private void ShowChip(string foreground, string text)
     {
         _stateChip.IsVisible = true;
         _stateChipText.Text = text;

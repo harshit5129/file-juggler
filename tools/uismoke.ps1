@@ -90,6 +90,7 @@ public static class JugglerSmoke
 # Harness
 # ---------------------------------------------------------------------------
 $script:results = New-Object System.Collections.Generic.List[object]
+$script:assertFailed = $false
 $script:app = $null
 $script:errFile = $null
 
@@ -245,6 +246,32 @@ function Click-Element {
     if (-not $el) { throw "element not found: '$Name'" }
     $r = $el.Current.BoundingRectangle
     [JugglerSmoke]::Click([int]($r.X + $r.Width / 2), [int]($r.Y + $r.Height / 2))
+}
+
+function Find-VisibleButtons {
+    <#
+      All automation elements with the given accessible name that are actually
+      on screen. Collapsed rows (IsVisible=false) report IsOffscreen or vanish
+      from the tree entirely; either way they are excluded here.
+    #>
+    param([string] $Name)
+    $root = [System.Windows.Automation.AutomationElement]::FromHandle((Get-MainWindow))
+    $cond = New-Object System.Windows.Automation.PropertyCondition(
+        [System.Windows.Automation.AutomationElement]::NameProperty, $Name)
+    $all = $root.FindAll([System.Windows.Automation.TreeScope]::Descendants, $cond)
+    $vis = @()
+    foreach ($el in $all) {
+        try { if (-not $el.Current.IsOffscreen) { $vis += $el } } catch { }
+    }
+    return $vis
+}
+
+function Assert-Count {
+    param([string] $What, [int] $Actual, [int] $Expected)
+    if ($Actual -ne $Expected) {
+        $script:assertFailed = $true
+        throw "${What}: expected ${Expected}, found ${Actual}"
+    }
 }
 
 function Close-Secondary {
@@ -404,6 +431,30 @@ Invoke-Step 'SearchFilter' {
     }
 }
 
+Invoke-Step 'SearchFilterNarrowsRows' {
+    # Example config has 3 rules plus the one EditorSave added; only the PDFs
+    # rule matches 'pdf'. Before the IsVisible binding fix this found 4.
+    Start-Sleep -Milliseconds 800
+    $edits = @(Find-VisibleButtons -Name 'Edit')
+    Assert-Count 'visible Edit buttons for filter pdf' $edits.Count 1
+}
+
+Invoke-Step 'SearchFilterNoMatch' {
+    $box = Find-Element -Handle (Get-MainWindow) -Type 'Edit'
+    if (-not $box) { throw 'filter box not found' }
+    $r = $box.Current.BoundingRectangle
+    [JugglerSmoke]::Click([int]($r.X + 20), [int]($r.Y + $r.Height / 2))
+    Start-Sleep -Milliseconds 300
+    [System.Windows.Forms.SendKeys]::SendWait('^a{DEL}')
+    Start-Sleep -Milliseconds 300
+    [System.Windows.Forms.SendKeys]::SendWait('zzz-no-such-rule')
+    Start-Sleep -Milliseconds 800
+    $edits = @(Find-VisibleButtons -Name 'Edit')
+    Assert-Count 'visible Edit buttons for nonsense filter' $edits.Count 0
+    $hint = Find-Element -Handle (Get-MainWindow) -Name 'No rules match that filter'
+    if (-not $hint) { $script:assertFailed = $true; throw 'no-match hint not shown' }
+}
+
 Invoke-Step 'ClearFilter' {
     $box = Find-Element -Handle (Get-MainWindow) -Type 'Edit'
     if ($box) {
@@ -412,6 +463,12 @@ Invoke-Step 'ClearFilter' {
         Start-Sleep -Milliseconds 300
         [System.Windows.Forms.SendKeys]::SendWait('^a{DEL}')
     }
+}
+
+Invoke-Step 'ClearFilterRestoresRows' {
+    Start-Sleep -Milliseconds 800
+    $edits = @(Find-VisibleButtons -Name 'Edit')
+    Assert-Count 'visible Edit buttons after clearing filter' $edits.Count 4
 }
 
 Invoke-Step 'TabLog'      { Click-Element -Name 'Log' -Type 'TabItem' }
@@ -436,6 +493,8 @@ Write-Host ''
 Write-Host 'Results' -ForegroundColor Cyan
 $script:results | Format-Table -AutoSize -Wrap
 $crashes = @($script:results | Where-Object { $_.Crashed })
-Write-Host ("{0} steps, {1} crashes" -f $script:results.Count, $crashes.Count) `
-    -ForegroundColor $(if ($crashes.Count) { 'Red' } else { 'Green' })
-exit $(if ($crashes.Count) { 1 } else { 0 })
+$failed = $crashes.Count
+if ($script:assertFailed) { $failed += 1 }
+Write-Host ("{0} steps, {1} crashes, {2}" -f $script:results.Count, $crashes.Count, $(if ($script:assertFailed) { 'ASSERTIONS FAILED' } else { 'assertions ok' })) `
+    -ForegroundColor $(if ($failed) { 'Red' } else { 'Green' })
+exit $(if ($failed) { 1 } else { 0 })

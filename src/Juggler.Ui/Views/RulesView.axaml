@@ -15,8 +15,8 @@
                      KeyUp="OnSearchKeyUp" />
 
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                <Button Classes="ghost" Content="Import" ToolTip.Tip="Import rules from a file" />
-                <Button Classes="ghost" Content="Export" ToolTip.Tip="Export all rules to a file" />
+                <Button Classes="ghost" Content="Import" ToolTip.Tip="Import rules from a file" Click="OnImport" />
+                <Button Classes="ghost" Content="Export" ToolTip.Tip="Export all rules to a file" Click="OnExport" />
                 <Button Classes="accent" Content="+  New rule" Click="OnNewRule" />
             </StackPanel>
         </Grid>
@@ -33,12 +33,12 @@
                                      it. Depth comes from rules, not from stacked surfaces. The
                                      decorative action glyph that used to sit here was removed: it
                                      repeated the same icon on every row and carried no information. -->
-                            <Border Classes="row" Padding="4,14">
+                            <Border Classes="row" Padding="4,14" IsVisible="{Binding IsVisible}">
                                 <Grid ColumnDefinitions="Auto,*,Auto">
 
                                     <!-- Enabled toggle -->
                                     <ToggleSwitch Grid.Column="0"
-                                                  IsChecked="{Binding IsEnabled, Mode=TwoWay}"
+                                                  IsChecked="{Binding IsEnabled, Mode=OneWay}"
                                                   Tag="{Binding}"
                                                   IsCheckedChanged="OnToggleEnabled"
                                                   ToolTip.Tip="Pause or resume this rule"
@@ -58,6 +58,10 @@
                                     <!-- Row actions: trailing Auto column, right-aligned. -->
                                     <StackPanel Grid.Column="2" Orientation="Horizontal"
                                                 Spacing="4" VerticalAlignment="Center">
+                                        <Button Classes="ghost" Content="Run"
+                                                Tag="{Binding}"
+                                                Click="OnRun"
+                                                ToolTip.Tip="Run this rule now" />
                                         <Button Classes="ghost" Content="Edit"
                                                 Tag="{Binding}"
                                                 Click="OnEdit" />
@@ -96,9 +100,12 @@
                 <TextBlock Classes="secondary wrap" TextAlignment="Center"
                            Text="Add a rule to watch a folder and sort what lands in it. Nothing leaves your machine." />
 
-                <Button Classes="accent" Content="+  Create your first rule"
+                <Button Classes="accent" Content="Get started"
                         HorizontalAlignment="Center" Margin="0,6,0,0"
-                        Click="OnNewRule" />
+                        Click="OnGetStarted" />
+
+                <Button Classes="ghost" Content="Add a rule by hand"
+                        HorizontalAlignment="Center" Click="OnNewRule" />
             </StackPanel>
 
             <!-- NO MATCH STATE -->
