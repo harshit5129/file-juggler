@@ -196,7 +196,7 @@ public sealed partial class RuleEditorWindow : Window
     {
         if (!_binding)
         {
-            _vm.SetIncludeSubfolders(_subfoldersCheck.IsChecked ?? true);
+            _vm.SetIncludeSubfolders(_subfoldersCheck.IsChecked == true);
         }
     }
 
@@ -269,12 +269,28 @@ public sealed partial class RuleEditorWindow : Window
             return;
         }
 
-        // Parsed leniently: a half-typed number clears the bound rather than raising an error,
-        // because mid-keystroke input is not a mistake worth blocking on.
+        // Parsed leniently: empty clears the bound, a valid non-negative number sets it,
+        // and anything else is left alone so a half-typed or invalid value never silently
+        // wipes an existing bound. Mid-keystroke input is not a mistake worth blocking on,
+        // but silently dropping a bound the user thought they set would be data loss.
+        string? minText = _minSizeBox.Text;
+        string? maxText = _maxSizeBox.Text;
+
+        long? min = ParseSize(minText);
+        long? max = ParseSize(maxText);
+
+        bool minInvalid = !string.IsNullOrWhiteSpace(minText) && min is null;
+        bool maxInvalid = !string.IsNullOrWhiteSpace(maxText) && max is null;
+
+        if (minInvalid || maxInvalid)
+        {
+            return;
+        }
+
         _vm.UpdateCondition(c => c with
         {
-            MinSizeBytes = ParseSize(_minSizeBox.Text),
-            MaxSizeBytes = ParseSize(_maxSizeBox.Text),
+            MinSizeBytes = min,
+            MaxSizeBytes = max,
         });
     }
 

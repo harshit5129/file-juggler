@@ -23,13 +23,17 @@ class Program
     {
         // Best effort: on an OS that rejects it the manifest still applies, so a false return
         // here is not fatal and must not stop startup.
-        try
+        if (OperatingSystem.IsWindows())
         {
-            SetProcessDpiAwarenessContext(PerMonitorAwareV2);
-        }
-        catch (EntryPointNotFoundException)
-        {
-            // Pre-10 Windows: app.manifest is the only mechanism available.
+            try
+            {
+                SetProcessDpiAwarenessContext(PerMonitorAwareV2);
+            }
+            catch (Exception ex) when (ex is EntryPointNotFoundException or DllNotFoundException)
+            {
+                // Pre-10 Windows: app.manifest is the only mechanism available.
+                // Non-Windows dev machines: user32.dll does not exist.
+            }
         }
 
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);

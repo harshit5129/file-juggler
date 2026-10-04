@@ -135,7 +135,7 @@ public sealed partial class LogView : UserControl
                        .TakeLast(maxLines)
             ];
         }
-        catch (IOException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             return [];
         }

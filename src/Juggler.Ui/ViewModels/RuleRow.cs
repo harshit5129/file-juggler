@@ -98,8 +98,8 @@ public sealed class RuleRow : INotifyPropertyChanged
     }
 
     /// <summary>True when this row matches the given search text.</summary>
-    public bool Matches(string query) =>
-        query.Length == 0
+    public bool Matches(string? query) =>
+        string.IsNullOrEmpty(query)
         || Name.Contains(query, StringComparison.OrdinalIgnoreCase)
         || Summary.Contains(query, StringComparison.OrdinalIgnoreCase)
         || PathSummary.Contains(query, StringComparison.OrdinalIgnoreCase);
@@ -151,7 +151,7 @@ public sealed class RuleRow : INotifyPropertyChanged
         ActionKind.SortIntoFolders => $"Sort by {DescribeSort(sortBy)}",
         ActionKind.DeleteToRecycleBin => "Recycle",
         ActionKind.RunCommand => "Run command",
-        _ => "Move",
+        _ => kind.ToString(),
     };
 
     private static string DescribeSort(SortKey key) => key switch
@@ -161,7 +161,7 @@ public sealed class RuleRow : INotifyPropertyChanged
         SortKey.DateCreated => "date created",
         SortKey.DateModified => "date modified",
         SortKey.Size => "size",
-        _ => key.ToString().ToLowerInvariant(),
+        _ => key.ToString(),
     };
 
     private string DescribeConditions()
@@ -189,11 +189,41 @@ public sealed class RuleRow : INotifyPropertyChanged
             parts.Add(Formatting.SizeOrAny(Rule.If.MinSizeBytes) + EnDash + Formatting.SizeOrAny(Rule.If.MaxSizeBytes));
         }
 
-        if (Rule.If.CreatedAfter is not null || Rule.If.ModifiedAfter is not null)
+        if (Rule.If.CreatedAfter is not null
+            || Rule.If.CreatedBefore is not null
+            || Rule.If.ModifiedAfter is not null
+            || Rule.If.ModifiedBefore is not null)
         {
-            parts.Add("recent");
+            parts.Add(DescribeDateBounds());
         }
 
         return parts.Count == 0 ? "all files" : string.Join(Sep, parts);
+    }
+
+    private string DescribeDateBounds()
+    {
+        List<string> bounds = [];
+
+        if (Rule.If.CreatedAfter is not null)
+        {
+            bounds.Add($"created after {Rule.If.CreatedAfter:yyyy-MM-dd}");
+        }
+
+        if (Rule.If.CreatedBefore is not null)
+        {
+            bounds.Add($"created before {Rule.If.CreatedBefore:yyyy-MM-dd}");
+        }
+
+        if (Rule.If.ModifiedAfter is not null)
+        {
+            bounds.Add($"modified after {Rule.If.ModifiedAfter:yyyy-MM-dd}");
+        }
+
+        if (Rule.If.ModifiedBefore is not null)
+        {
+            bounds.Add($"modified before {Rule.If.ModifiedBefore:yyyy-MM-dd}");
+        }
+
+        return bounds.Count == 0 ? "dated" : string.Join(", ", bounds);
     }
 }

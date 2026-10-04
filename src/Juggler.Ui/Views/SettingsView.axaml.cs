@@ -87,8 +87,8 @@ public sealed partial class SettingsView : UserControl
         {
             _current = config.General;
 
-            _concurrencyBox.ItemsSource = new object[] { "1", "2", "3", "4" };
-            _concurrencyBox.SelectedItem = _current.MaxConcurrent.ToString();
+            _concurrencyBox.ItemsSource = new object[] { "1", "2", "3", "4", "5", "6", "7", "8" };
+            _concurrencyBox.SelectedItem = Math.Clamp(_current.MaxConcurrent, 1, 8).ToString();
 
             _residentRadio.IsChecked = _current.Mode == RunMode.Resident;
             _scheduledRadio.IsChecked = _current.Mode == RunMode.Scheduled;
@@ -149,6 +149,10 @@ public sealed partial class SettingsView : UserControl
             return;
         }
 
+        // NOTE: SuspendOnScreenSaver and ThrottleWhenMonitorOff have no dedicated
+        // switches in this view and are therefore preserved from _current via the
+        // `with` expression. They must not be copied from the lock/battery switches:
+        // that silently forced two independent settings to the same value.
         _current = _current with
         {
             Mode = _scheduledRadio.IsChecked == true ? RunMode.Scheduled : RunMode.Resident,
@@ -157,9 +161,7 @@ public sealed partial class SettingsView : UserControl
             SweepIntervalMinutes = ReadInt(_sweepBox.Text, _current.SweepIntervalMinutes, 1, 1440),
             RegisterAutostart = _autostartSwitch.IsChecked == true,
             SuspendOnLock = _lockSwitch.IsChecked == true,
-            SuspendOnScreenSaver = _lockSwitch.IsChecked == true,
             ThrottleOnBattery = _batterySwitch.IsChecked == true,
-            ThrottleWhenMonitorOff = _batterySwitch.IsChecked == true,
             Priority = _prioritySwitch.IsChecked == true ? PriorityMode.BelowNormal : PriorityMode.Idle,
             Notify = _notifySwitch.IsChecked == true,
             NotifyOnError = _notifyErrorCheck.IsChecked == true,
@@ -167,7 +169,7 @@ public sealed partial class SettingsView : UserControl
             NotifyOnLowMemoryMode = _notifyLowMemCheck.IsChecked == true,
             LogMaxMegabytes = ReadInt(_logSizeBox.Text, _current.LogMaxMegabytes, 1, 256),
             LogRotations = ReadInt(_logRotationsBox.Text, _current.LogRotations, 1, 20),
-            MaxConcurrent = _concurrencyBox.SelectedItem is string s && int.TryParse(s, out int c) ? c : 1,
+            MaxConcurrent = _concurrencyBox.SelectedItem is string s && int.TryParse(s, out int c) ? Math.Clamp(c, 1, 8) : _current.MaxConcurrent,
         };
 
         Changed?.Invoke();

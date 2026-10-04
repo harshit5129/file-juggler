@@ -202,18 +202,28 @@ public sealed class ConfigStore
     {
         List<Rule> normalized = [];
 
-        foreach (Rule rule in config.Rules)
+        foreach (Rule rule in config.Rules ?? [])
         {
+            MonitorSpec monitor = rule.Monitor ?? new MonitorSpec();
+            ConditionSpec condition = rule.If ?? new ConditionSpec();
+            ActionSpec action = rule.Then ?? new ActionSpec();
+
             normalized.Add(rule with
             {
                 Name = rule.Name ?? "New Rule",
                 Errors = [],
-                Monitor = rule.Monitor with { Paths = rule.Monitor.Paths ?? [] },
-                If = rule.If with { Extensions = rule.If.Extensions ?? [] },
+                Monitor = monitor with { Paths = [.. (monitor.Paths ?? []).Where(p => p is not null)] },
+                If = condition with { Extensions = [.. (condition.Extensions ?? []).Where(e => e is not null)] },
+                Then = action,
             });
         }
 
-        AppConfig clean = config with { Rules = normalized };
+        AppConfig clean = config with
+        {
+            General = config.General ?? new GeneralSettings(),
+            Stats = config.Stats ?? new RunStats(),
+            Rules = normalized,
+        };
 
         // Attach per-rule errors so the editor can show them inline.
         foreach (ConfigIssue issue in ConfigValidator.Validate(clean))
@@ -245,7 +255,7 @@ public sealed class ConfigStore
                 File.Delete(path);
             }
         }
-        catch (IOException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             // Best effort. The temp file is harmless.
         }

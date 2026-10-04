@@ -25,8 +25,16 @@ public sealed record ConfigIssue(Rule? Rule, string RuleId, string Message, Issu
 /// </summary>
 public static class ConfigValidator
 {
-    private static readonly HashSet<string> ForbiddenCommands =
-        ["cmd", "cmd.exe", "powershell", "powershell.exe", "pwsh", "wscript", "cscript", "mshta", "reg", "regedit"];
+    private static readonly HashSet<string> ForbiddenCommands = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "cmd", "cmd.exe",
+        "powershell", "powershell.exe",
+        "pwsh", "pwsh.exe",
+        "wscript", "wscript.exe",
+        "cscript", "cscript.exe",
+        "mshta", "mshta.exe",
+        "reg", "regedit", "regedit.exe",
+    };
 
     public static IReadOnlyList<ConfigIssue> Validate(AppConfig config)
     {
@@ -108,7 +116,7 @@ public static class ConfigValidator
     /// A rule with no monitored folders. Such a rule is inert: no file can ever match it, so
     /// validating its conditions and action produces noise rather than a real defect.
     /// </summary>
-    private static bool IsDraft(Rule rule) => rule.Monitor.Paths.Count == 0;
+    private static bool IsDraft(Rule rule) => rule.Monitor?.Paths is null || rule.Monitor.Paths.Count == 0;
 
     private static void ValidateIdentity(Rule rule, HashSet<string> seenIds, Action<string> error, Action<string> warn)
     {
@@ -129,9 +137,14 @@ public static class ConfigValidator
 
     private static void ValidateMonitor(Rule rule, Action<string> error)
     {
+        if (rule.Monitor?.Paths is null)
+        {
+            return;
+        }
+
         foreach (MonitorEntry entry in rule.Monitor.Paths)
         {
-            string p = entry.Path;
+            string? p = entry?.Path;
 
             if (string.IsNullOrWhiteSpace(p))
             {
@@ -142,7 +155,7 @@ public static class ConfigValidator
             if (!Path.IsPathRooted(p))
                 error($"Monitor path '{p}' must be absolute. Relative paths make behaviour depend on the working directory.");
 
-            if (p.Contains("..", StringComparison.Ordinal))
+            if (ContainsParentSegment(p))
                 error($"Monitor path '{p}' contains '..'. Traversal is not permitted.");
 
             if (p.IndexOfAny(['*', '?']) >= 0)
@@ -150,9 +163,27 @@ public static class ConfigValidator
         }
     }
 
+    private static bool ContainsParentSegment(string path)
+    {
+        foreach (string part in path.Split([Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar]))
+        {
+            if (part == "..")
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static void ValidateConditions(Rule rule, Action<string> error, Action<string> warn)
     {
-        ConditionSpec c = rule.If;
+        ConditionSpec? c = rule.If;
+
+        if (c is null)
+        {
+            return;
+        }
 
         foreach (string ext in c.Extensions)
         {
@@ -197,7 +228,13 @@ public static class ConfigValidator
 
     private static void ValidateAction(Rule rule, Action<string> error)
     {
-        ActionSpec a = rule.Then;
+        ActionSpec? a = rule.Then;
+
+        if (a is null)
+        {
+            error("Action is missing.");
+            return;
+        }
 
         if (a.Action is ActionKind.Move or ActionKind.Copy)
         {
@@ -209,7 +246,13 @@ public static class ConfigValidator
         else if (a.Action == ActionKind.Rename)
         {
             if (string.IsNullOrWhiteSpace(a.RenamePattern) && string.IsNullOrWhiteSpace(a.Into))
+            {
                 error("Action 'Rename' requires a rename pattern or a destination folder.");
+            }
+            else if (!string.IsNullOrWhiteSpace(a.Into))
+            {
+                ValidateDestination(a.Into, error);
+            }
         }
         else if (a.Action == ActionKind.SortIntoFolders)
         {
@@ -243,7 +286,7 @@ public static class ConfigValidator
             return;
         }
 
-        if (into.Contains("..", StringComparison.Ordinal))
+        if (ContainsParentSegment(into))
             error($"Destination '{into}' contains '..'. Traversal is not permitted.");
 
         ValidateTokens(into, "destination", error);
@@ -255,21 +298,17 @@ public static class ConfigValidator
     /// </summary>
     private static void ValidateTokens(string value, string field, Action<string> error)
     {
-        int depth = 0;
-
         for (int i = 0; i < value.Length; i++)
         {
-            if (value[i] != '{')
-                continue;
-
-            if (depth == 0)
+            if (value[i] == '}')
             {
-                depth = 1;
-            }
-            else
-            {
-                error($"{field} contains nested '{{', which is not supported.");
+                error($"{field} contains an unmatched '}}'. Every token must be opened, e.g. {{extension}}.");
                 return;
+            }
+
+            if (value[i] != '{')
+            {
+                continue;
             }
 
             int close = value.IndexOf('}', i + 1);
@@ -279,7 +318,19 @@ public static class ConfigValidator
                 return;
             }
 
-            depth = 0;
+            if (close == i + 1)
+            {
+                error($"{field} contains an empty '{{}}' token.");
+                return;
+            }
+
+            string inner = value.Substring(i + 1, close - i - 1);
+            if (inner.Contains('{'))
+            {
+                error($"{field} contains nested '{{', which is not supported.");
+                return;
+            }
+
             i = close;
         }
     }

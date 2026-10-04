@@ -19,11 +19,14 @@ public sealed class ConfigChangedEventArgs(AppConfig config) : EventArgs
 public sealed class ConfigService : IDisposable
 {
     private readonly ConfigStore _store;
+    private readonly SynchronizationContext? _syncContext;
     private FileSystemWatcher? _watcher;
+    private bool _disposed;
 
     public ConfigService(string? path = null)
     {
         _store = new ConfigStore(path);
+        _syncContext = SynchronizationContext.Current;
         Reload();
         StartWatching();
     }
@@ -67,7 +70,7 @@ public sealed class ConfigService : IDisposable
     public bool Upsert(Rule rule)
     {
         List<Rule> rules = [.. Current.Rules];
-        int index = rules.FindIndex(r => r.Id == rule.Id);
+        int index = rules.FindIndex(r => string.Equals(r.Id, rule.Id, StringComparison.OrdinalIgnoreCase));
 
         if (index >= 0)
         {
@@ -83,7 +86,7 @@ public sealed class ConfigService : IDisposable
 
     public bool DeleteRule(string id)
     {
-        List<Rule> rules = [.. Current.Rules.Where(r => r.Id != id)];
+        List<Rule> rules = [.. Current.Rules.Where(r => !string.Equals(r.Id, id, StringComparison.OrdinalIgnoreCase))];
         return TrySave(Current with { Rules = rules });
     }
 
@@ -95,14 +98,22 @@ public sealed class ConfigService : IDisposable
 
     private bool TrySave(AppConfig candidate)
     {
+        IReadOnlyList<ConfigIssue> issues;
         try
         {
-            _store.Save(candidate);
+            issues = _store.Save(candidate);
         }
         catch (Exception ex)
         {
             // Surfaced in the UI rather than thrown: a failed write must not take the window down.
             LoadError = $"Could not save '{_store.Path}': {ex.Message}";
+            IssuesChanged?.Invoke(this, Issues);
+            return false;
+        }
+
+        if (issues.Any(i => i.Severity == IssueSeverity.Error))
+        {
+            Issues = issues;
             IssuesChanged?.Invoke(this, Issues);
             return false;
         }
@@ -161,16 +172,20 @@ public sealed class ConfigService : IDisposable
     {
         lock (_gate)
         {
+            if (_disposed)
+            {
+                return;
+            }
+
             _debounce?.Dispose();
             _debounce = new System.Threading.Timer(
                 _ => ReloadAfterQuiet(),
                 null,
-                System.Threading.Timeout.InfiniteTimeSpan,
-                DebounceDelay);
+                DebounceDelay,
+                System.Threading.Timeout.InfiniteTimeSpan);
         }
     }
 
-    /// <summary>How long the file must be quiet before it is read.</summary>
     /// <summary>How long the file must be quiet before it is read.</summary>
     private static readonly System.TimeSpan DebounceDelay = System.TimeSpan.FromMilliseconds(300);
 
@@ -179,12 +194,25 @@ public sealed class ConfigService : IDisposable
     {
         for (int attempt = 0; attempt < 5; attempt++)
         {
-            ConfigStore.LoadResult probe = _store.Load();
+            if (_disposed)
+            {
+                return;
+            }
+
+            ConfigStore.LoadResult probe;
+            try
+            {
+                probe = _store.Load();
+            }
+            catch (Exception)
+            {
+                return;
+            }
 
             // A real file is there. Adopt it and stop.
             if (probe.IsAuthoritative)
             {
-                Reload();
+                InvokeReload();
                 return;
             }
 
@@ -193,7 +221,39 @@ public sealed class ConfigService : IDisposable
             Thread.Sleep(100);
         }
 
-        Reload();
+        InvokeReload();
+    }
+
+    private void InvokeReload()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        SynchronizationContext? context = _syncContext;
+        if (context is not null && SynchronizationContext.Current != context)
+        {
+            try
+            {
+                context.Post(_ => Reload(), null);
+            }
+            catch (Exception)
+            {
+                // Posting to a disposed UI context must not take the watcher down.
+            }
+
+            return;
+        }
+
+        try
+        {
+            Reload();
+        }
+        catch (Exception)
+        {
+            // Reload never throws today, but the watcher must never propagate.
+        }
     }
 
     private readonly Lock _gate = new();
@@ -202,6 +262,13 @@ public sealed class ConfigService : IDisposable
 
     public void Dispose()
     {
+        lock (_gate)
+        {
+            _disposed = true;
+            _debounce?.Dispose();
+            _debounce = null;
+        }
+
         _watcher?.Dispose();
         _watcher = null;
     }

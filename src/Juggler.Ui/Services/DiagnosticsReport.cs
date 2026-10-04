@@ -21,8 +21,27 @@ public sealed record DiagnosticsReport(
         System.IO.Path.GetDirectoryName(ConfigPath) ?? ConfigPath;
 
     public string RuntimeDescription =>
-        $"{(Environment.Is64BitProcess ? "x64" : "x86")} / "
-        + $"{(OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000) ? "Windows 11" : "Windows 10")}";
+        $"{(Environment.Is64BitProcess ? "x64" : "x86")} / " + RuntimeOs();
+
+    private static string RuntimeOs()
+    {
+        if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000))
+        {
+            return "Windows 11";
+        }
+
+        if (OperatingSystem.IsWindowsVersionAtLeast(10, 0, 10240))
+        {
+            return "Windows 10";
+        }
+
+        if (OperatingSystem.IsWindows())
+        {
+            return "Windows (pre-10)";
+        }
+
+        return System.Runtime.InteropServices.RuntimeInformation.OSDescription.Trim();
+    }
 
     /// <summary>Plain text suitable for pasting into an issue.</summary>
     public string ToReport()

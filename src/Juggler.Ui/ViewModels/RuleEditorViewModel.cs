@@ -64,7 +64,7 @@ public sealed class RuleEditorViewModel
     public event EventHandler? Changed;
 
     public string ErrorSummary => HasErrors
-        ? string.Join(Environment.NewLine, Issues.Where(i => i.Severity == IssueSeverity.Error).Select(i => "??,?? " + i.Message))
+        ? string.Join(Environment.NewLine, Issues.Where(i => i.Severity == IssueSeverity.Error).Select(i => "• " + i.Message))
         : string.Empty;
 
     /// <summary>
@@ -112,8 +112,11 @@ public sealed class RuleEditorViewModel
         Validate();
     }
 
-    public void SetIncludeSubfolders(bool include) =>
+    public void SetIncludeSubfolders(bool include)
+    {
         Rule = Rule with { Monitor = Rule.Monitor with { IncludeSubfolders = include } };
+        Validate();
+    }
 
     public void SetNamePattern(string? pattern)
     {
